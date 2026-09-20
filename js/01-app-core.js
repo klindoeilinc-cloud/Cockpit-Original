@@ -117,6 +117,32 @@ const SECTORS_META = {
   'Autre':          { icon:'◈', color:'#60a5fa' },
 };
 
+// ═══════════════════════════════════════════════════════
+//  MODÈLE DE CAMPAGNE — extension de Project, pas une nouvelle entité
+// ───────────────────────────────────────────────────────
+// STRATEGIE-PRODUIT.md section C.1 : sans canaux, budget média et objectif,
+// un "Project" ne peut pas répondre à la question qu'une direction
+// marketing pose en premier ("combien nous coûte et nous rapporte cette
+// campagne, tous canaux confondus ?"). Champs volontairement additifs et
+// optionnels sur l'entité Project existante (voir AUDIT.md, principe :
+// jamais de réécriture massive sans nécessité) — un projet sans canal
+// sélectionné reste un simple projet, exactement comme avant ce patch.
+// ═══════════════════════════════════════════════════════
+const MCPS_CHANNELS = {
+  social:   { icon:'📱', label:'Réseaux sociaux' },
+  email:    { icon:'✉️', label:'Email' },
+  presse:   { icon:'📰', label:'Presse / RP' },
+  display:  { icon:'🎯', label:'Display / Ads' },
+  influence:{ icon:'🎤', label:'Influence' },
+  seo:      { icon:'🔍', label:'SEO / Contenu' },
+};
+const MCPS_CAMPAIGN_OBJECTIVES = ['Notoriété', 'Acquisition', 'Conversion', 'Rétention'];
+// Un projet "est une campagne" s'il porte au moins un canal ou un objectif —
+// pas de champ booléen dédié : évite un état incohérent (canaux renseignés
+// mais isCampaign resté à false après une modification manuelle, etc.).
+function isCampaign(p) { return !!((p.channels && p.channels.length) || p.objective); }
+window.isCampaign = isCampaign;
+
 // ── DATA LOADING: embedded → localStorage → default ──
 (function() {
   try {
@@ -340,6 +366,11 @@ window.MCPS_VALIDATE = {
     if (!o.clientId || isNaN(o.clientId)) errors.push('Sélectionnez un client avant de créer un projet.');
     if (o.startDate && o.endDate && o.endDate < o.startDate) errors.push('La date de fin ne peut pas précéder la date de début.');
     if (o.estimatedHours != null && o.estimatedHours < 0) errors.push('Les heures estimées ne peuvent pas être négatives.');
+    // Modèle de Campagne (STRATEGIE-PRODUIT.md C.1) — champs optionnels, ne
+    // s'appliquent que si renseignés : un projet interne sans canal reste valide.
+    if (o.mediaBudget != null && o.mediaBudget < 0) errors.push('Le budget média ne peut pas être négatif.');
+    if (o.objective && !MCPS_CAMPAIGN_OBJECTIVES.includes(o.objective)) errors.push('Objectif de campagne invalide.');
+    if (o.channels && (!Array.isArray(o.channels) || o.channels.some(c => !MCPS_CHANNELS[c]))) errors.push('Canal de campagne invalide.');
     return { valid: errors.length === 0, errors };
   },
   task(o) {
@@ -1440,10 +1471,12 @@ function renderProjects() {
   tbody.innerHTML=projs.map(p=>{
     const cl=gc(p.clientId), comp=pComp(p.id), real=pReal(p.id), delta=real>0?real-p.estimatedHours:null, ts=pTasks(p.id);
     const meta=SECTORS_META[cl?.sector]||{icon:'◈'};
+    const chanBadges = (p.channels||[]).map(k=>MCPS_CHANNELS[k]?`<span class="chan-badge">${MCPS_CHANNELS[k].icon} ${MCPS_CHANNELS[k].label}</span>`:'').join('') || '<span style="color:var(--text-muted);font-size:11.5px">—</span>';
     return `<tr>
       <td><strong>${esc(p.name)}</strong></td>
       <td>${ctag(p.clientId)}</td>
       <td style="font-size:12px;color:var(--text-muted)">${meta.icon} ${esc(cl?.sector||'')}</td>
+      <td style="max-width:180px">${chanBadges}</td>
       <td><select onchange="updateProjStatus(${p.id},this.value)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:11.5px;cursor:pointer;outline:none;font-family:var(--body)">
         ${['Non démarré','En cours','Terminé'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}
       </select></td>
@@ -1457,7 +1490,7 @@ function renderProjects() {
         <button class="btn btn-danger btn-sm" onclick="deleteProject(${p.id})">🗑</button>
       </td>
     </tr>`;
-  }).join('')||`<tr><td colspan="9"><div class="empty"><div class="empty-ico">🗂</div><div class="empty-txt">Aucun projet trouvé</div></div></td></tr>`;
+  }).join('')||`<tr><td colspan="10"><div class="empty"><div class="empty-ico">🗂</div><div class="empty-txt">Aucun projet trouvé</div></div></td></tr>`;
 }
 
 function updateProjStatus(pid, st) {
@@ -1758,6 +1791,11 @@ function renderDirectorReport(){
   const intel = (typeof computeIntelligence==='function') ? computeIntelligence() : null;
   const quality = (intel && intel.creativeQuality!=null) ? intel.creativeQuality+'%' : '—';
   const predRisk = (intel && intel.predictiveRisk!=null) ? intel.predictiveRisk+'%' : '—';
+  // Vitrine du différenciateur (STRATEGIE-PRODUIT.md section D) : le budget
+  // média engagé sur les campagnes actives, à mettre en regard des heures
+  // de production déjà visibles ailleurs dans ce même rapport.
+  const activeCampaigns = activeProjects.filter(isCampaign);
+  const totalMediaBudget = activeCampaigns.reduce((s,p)=>s+(p.mediaBudget||0),0);
 
   const kpiCard = (val,label,color) => `<div class="card" style="padding:16px 18px">
     <div style="font-family:var(--mono);font-size:26px;font-weight:800;color:${color}">${val}</div>
@@ -1767,6 +1805,7 @@ function renderDirectorReport(){
   if (elKpis) elKpis.innerHTML =
     kpiCard(nbRed, 'Projet(s) en retard', nbRed?'var(--red)':'var(--green)') +
     kpiCard(nbAmber, 'À surveiller (échéance ≤ 7 j)', 'var(--amber)') +
+    kpiCard(activeCampaigns.length ? formatXOF(totalMediaBudget) : '—', `Budget média engagé (${activeCampaigns.length} campagne${activeCampaigns.length>1?'s':''} active${activeCampaigns.length>1?'s':''})`, 'var(--accent)') +
     kpiCard(quality, 'Score de qualité créative', 'var(--accent)') +
     kpiCard(predRisk, 'Risque prédictif global', 'var(--purple)');
 
@@ -1855,6 +1894,16 @@ function toggleNeed(n) {
   else { el.classList.add('sel-'+n); if(!_selectedNeeds.includes(n)) _selectedNeeds.push(n); }
 }
 
+// Toggle channel checkboxes (modèle de Campagne — voir MCPS_CHANNELS)
+let _selectedChannels = [];
+function toggleChannel(k) {
+  const el=document.getElementById('chchk-'+k);
+  if(!el) return;
+  if(el.classList.contains('selected')) { el.classList.remove('selected'); _selectedChannels=_selectedChannels.filter(x=>x!==k); }
+  else { el.classList.add('selected'); if(!_selectedChannels.includes(k)) _selectedChannels.push(k); }
+}
+window.toggleChannel = toggleChannel;
+
 function calcHT() {
   const b=parseInt(document.getElementById('fc-budget')?.value)||0;
   const dur=parseInt(document.getElementById('fc-duration')?.value)||0;
@@ -1903,7 +1952,11 @@ function deleteClient(cid) {
 function submitProject(existingId=0) {
   const name=document.getElementById('fp-name').value.trim();
   const responsable = document.getElementById('fp-responsable')?.value?.trim() || null;
-  const obj={name, clientId:parseInt(document.getElementById('fp-client').value), status:document.getElementById('fp-status').value, priority:document.getElementById('fp-priority').value, startDate:document.getElementById('fp-start').value, endDate:document.getElementById('fp-end').value, estimatedHours:parseInt(document.getElementById('fp-hours').value)||0, responsable};
+  const objective = document.getElementById('fp-objective')?.value || null;
+  const mediaBudgetParsed = parseInt(document.getElementById('fp-mediabudget')?.value);
+  const mediaBudget = isNaN(mediaBudgetParsed) ? null : Math.max(0, mediaBudgetParsed);
+  const publishDate = document.getElementById('fp-publishdate')?.value || null;
+  const obj={name, clientId:parseInt(document.getElementById('fp-client').value), status:document.getElementById('fp-status').value, priority:document.getElementById('fp-priority').value, startDate:document.getElementById('fp-start').value, endDate:document.getElementById('fp-end').value, estimatedHours:parseInt(document.getElementById('fp-hours').value)||0, responsable, channels:[..._selectedChannels], objective, mediaBudget, publishDate};
   const _v = MCPS_VALIDATE.project(obj); if (!_v.valid) { showToast('⚠️',_v.errors[0],'var(--amber)'); if (window._mcpsShowFormErrors) window._mcpsShowFormErrors(_v.errors); return; }
   if(existingId) {
     Object.assign(gp(existingId),obj);
@@ -2532,6 +2585,8 @@ function _openModalLegacy(type, data={}) {
   } else if(type==='project') {
     const p=data;
     const allMembers = getAllTeamMembers ? getAllTeamMembers() : [];
+    _selectedChannels = Array.isArray(p.channels) ? [...p.channels] : [];
+    const chanCheck=(k,meta)=>`<div class="chan-chk ${_selectedChannels.includes(k)?'selected':''}" id="chchk-${k}" onclick="toggleChannel('${k}')">${meta.icon} ${meta.label}</div>`;
     body.innerHTML=`
       <div class="fg"><label class="flbl">Nom du projet *</label><input class="fin" id="fp-name" value="${esc(p.name||'')}"></div>
       <div class="fg"><label class="flbl">Client</label><select class="fin" id="fp-client">${DB.clients.map(c=>`<option value="${c.id}" ${p.clientId===c.id?'selected':''}>${c.name}</option>`).join('')}</select></div>
@@ -2550,6 +2605,19 @@ function _openModalLegacy(type, data={}) {
           ${allMembers.map(m=>`<option value="${esc(m)}" ${(p.responsable||'')=== m?'selected':''}>${esc(m)}</option>`).join('')}
         </select>
       </div>
+      <div class="fg"><label class="flbl">Canaux de campagne (optionnel — laisser vide si simple projet interne)</label>
+        <div class="need-checks">${Object.entries(MCPS_CHANNELS).map(([k,meta])=>chanCheck(k,meta)).join('')}</div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">Objectif</label>
+          <select class="fin" id="fp-objective">
+            <option value="">— Aucun —</option>
+            ${MCPS_CAMPAIGN_OBJECTIVES.map(o=>`<option ${p.objective===o?'selected':''}>${o}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fg"><label class="flbl">Budget média (XOF)</label><input class="fin" type="number" id="fp-mediabudget" value="${p.mediaBudget||''}" placeholder="Ex: 500000"></div>
+      </div>
+      <div class="fg"><label class="flbl">Date de publication prévue</label><input class="fin" type="date" id="fp-publishdate" value="${p.publishDate||''}"></div>
       <div class="modal-acts">
         <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
         <button class="btn btn-primary" onclick="submitProject(${p.id||0})">${p.id?'Enregistrer':'Créer le projet'}</button>

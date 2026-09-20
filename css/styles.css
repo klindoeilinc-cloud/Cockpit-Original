@@ -364,6 +364,12 @@ textarea.fin{resize:vertical;min-height:80px;line-height:1.5}
 .need-chk.sel-conseil{background:var(--purple-dim);border-color:rgba(167,139,250,.4);color:var(--purple)}
 .need-chk.sel-digital{background:var(--accent-dim);border-color:rgba(0,200,255,.4);color:var(--accent)}
 .need-chk:not([class*=sel-]):hover{background:var(--surface2);border-color:var(--border2)}
+/* Canaux de campagne (voir MCPS_CHANNELS, js/01-app-core.js) — même gabarit
+   que .need-chk, une seule couleur de sélection générique (pas une par canal) */
+.chan-chk{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--r-sm);border:1px solid var(--border);cursor:pointer;font-size:12.5px;font-weight:500;transition:all .2s;user-select:none}
+.chan-chk.selected{background:var(--accent-dim);border-color:rgba(212,175,55,.4);color:var(--accent)}
+.chan-chk:not(.selected):hover{background:var(--surface2);border-color:var(--border2)}
+.chan-badge{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;padding:2px 7px;border-radius:var(--radius-pill);background:var(--accent-dim);color:var(--accent);margin:0 3px 3px 0}
 
 /* ── PDF REPORT MODAL ── */
 .pdf-modal{width:640px}

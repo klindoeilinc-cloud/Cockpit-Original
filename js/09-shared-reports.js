@@ -31,15 +31,21 @@ function buildProjectShareSnapshot(project, client, tasks) {
     startDate: project.startDate || null,
     endDate: project.endDate || null,
     progressPct,
+    // Canaux et objectif : descriptifs, pas financiers — utiles au client
+    // pour se repérer, sans rien révéler du coût de production.
+    channels: Array.isArray(project.channels) ? project.channels.slice() : [],
+    objective: project.objective || null,
     tasks: pTasks.map(t => ({
       name: String(t.name || ''),
       status: String(t.status || ''),
       revisions: (typeof t.revisions === 'number') ? t.revisions : null,
       completedDate: t.completedDate || null,
     })),
-    // Champs volontairement absents : budget, estimatedHours, realHours,
+    // Champs volontairement absents : mediaBudget, estimatedHours, realHours,
     // qualityRating, assignedTo, responsable, tout ce qui touche à la marge
-    // ou aux ressources internes de l'agence.
+    // ou aux ressources internes de l'agence — y compris le budget média,
+    // pourtant descriptif, tant que la politique de partage n'a pas été
+    // explicitement validée sur ce point (voir STRATEGIE-PRODUIT.md).
   };
 }
 window.buildProjectShareSnapshot = buildProjectShareSnapshot;
@@ -156,6 +162,12 @@ async function _renderSharedReportView() {
 
 function _shareReportHtml(s) {
   const riskDot = { 'En cours': '🟡', 'Terminé': '🟢', 'Non démarré': '⚪' }[s.status] || '⚪';
+  // MCPS_CHANNELS est déclaré en `const` dans js/01-app-core.js : accessible
+  // ici comme identifiant global (même environnement lexical de premier
+  // niveau, partagé entre balises <script> classiques), mais jamais posé sur
+  // `window` — d'où la vérification par `typeof` plutôt que `window.*`.
+  const channelBadges = (s.channels || []).map(k => (typeof MCPS_CHANNELS !== 'undefined' && MCPS_CHANNELS[k])
+    ? `<span class="chan-badge">${MCPS_CHANNELS[k].icon} ${_esc(MCPS_CHANNELS[k].label)}</span>` : '').join('');
   const taskRows = (s.tasks || []).map(t => `<tr>
       <td>${_esc(t.name)}</td>
       <td>${_esc(t.status)}</td>
@@ -165,7 +177,8 @@ function _shareReportHtml(s) {
     <div class="shared-report-card">
       <div class="shared-report-badge">Rapport partagé — lecture seule</div>
       <h2>${riskDot} ${_esc(s.projectName)}</h2>
-      <div class="shared-report-meta">${_esc(s.clientName)} · ${_esc(s.status)} · échéance ${s.endDate ? _esc(s.endDate) : '—'}</div>
+      <div class="shared-report-meta">${_esc(s.clientName)} · ${_esc(s.status)}${s.objective ? ' · Objectif : ' + _esc(s.objective) : ''} · échéance ${s.endDate ? _esc(s.endDate) : '—'}</div>
+      ${channelBadges ? `<div style="margin-bottom:14px">${channelBadges}</div>` : ''}
       <div class="shared-report-progress-wrap">
         <div class="shared-report-progress-bar"><div style="width:${s.progressPct || 0}%"></div></div>
         <div class="shared-report-progress-label">${s.progressPct || 0}% d'avancement</div>

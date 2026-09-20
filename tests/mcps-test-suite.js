@@ -218,6 +218,16 @@ async function unitTests() {
   await test("client() accepte un cas valide", () => assert(win.MCPS_VALIDATE.client({ name: "ACME", budget: 100 }).valid));
   await test("project() rejette sans clientId", () => assert(!win.MCPS_VALIDATE.project({ name: "P", clientId: NaN }).valid));
   await test("project() rejette fin < début", () => assert(!win.MCPS_VALIDATE.project({ name: "P", clientId: 1, startDate: "2026-09-10", endDate: "2026-09-01" }).valid));
+  await test("project() accepte sans aucun champ de campagne (simple projet interne)", () => assert(win.MCPS_VALIDATE.project({ name: "P", clientId: 1 }).valid));
+  await test("project() rejette un budget média négatif", () => assert(!win.MCPS_VALIDATE.project({ name: "P", clientId: 1, mediaBudget: -100 }).valid));
+  await test("project() rejette un objectif de campagne invalide", () => assert(!win.MCPS_VALIDATE.project({ name: "P", clientId: 1, objective: "Autre chose" }).valid));
+  await test("project() rejette un canal inconnu", () => assert(!win.MCPS_VALIDATE.project({ name: "P", clientId: 1, channels: ["telepathie"] }).valid));
+  await test("project() accepte un canal et un objectif valides", () => assert(win.MCPS_VALIDATE.project({ name: "P", clientId: 1, channels: ["social", "email"], objective: "Notoriété", mediaBudget: 500000 }).valid));
+  await test("isCampaign() distingue un projet interne d'une campagne", () => {
+    assert(!win.isCampaign({ name: "Refonte interne" }));
+    assert(win.isCampaign({ name: "Lancement produit", channels: ["social"] }));
+    assert(win.isCampaign({ name: "Notoriété marque", objective: "Notoriété" }));
+  });
   await test("task() rejette un statut invalide", () => assert(!win.MCPS_VALIDATE.task({ name: "T", clientId: 1, status: "Bogus" }).valid));
   await test("task() rejette une note hors 1-5", () => assert(!win.MCPS_VALIDATE.task({ name: "T", clientId: 1, qualityRating: 9 }).valid));
   await test("invoice() rejette un montant nul", () => assert(!win.MCPS_VALIDATE.invoice({ label: "X", amount: 0, clientId: 1 }).valid));
@@ -225,7 +235,7 @@ async function unitTests() {
 
   suite("Unit — Rapport partagé (buildProjectShareSnapshot)", () => {});
   {
-    const project = { id: 1, name: "Campagne Rentrée", clientId: 10, status: "En cours", priority: "Haute", startDate: "2026-09-01", endDate: "2026-10-01" };
+    const project = { id: 1, name: "Campagne Rentrée", clientId: 10, status: "En cours", priority: "Haute", startDate: "2026-09-01", endDate: "2026-10-01", channels: ["social", "email"], objective: "Notoriété", mediaBudget: 1200000 };
     const client = { id: 10, name: "ACME Corp", budget: 5000000, contact: { email: "secret@acme.example" } };
     const tasks = [
       { id: 100, projectId: 1, name: "Visuel clé", status: "Terminé", revisions: 2, estimatedHours: 8, realHours: 11, qualityRating: 4, assignedTo: "Aïcha Traoré" },
@@ -246,6 +256,12 @@ async function unitTests() {
         "heures, note qualité et responsable ne doivent jamais fuiter dans l'instantané partagé");
     });
     await test("calcule un avancement cohérent (1 tâche terminée sur 2)", () => assertEqual(snap.progressPct, 50));
+    await test("expose canaux et objectif (descriptifs) mais jamais le budget média (financier)", () => {
+      assertEqual(snap.channels.join(','), 'social,email');
+      assertEqual(snap.objective, 'Notoriété');
+      assert(!('mediaBudget' in snap), "le budget média ne doit jamais fuiter dans l'instantané partagé, même s'il est en principe moins sensible que le budget client");
+      assert(JSON.stringify(snap).indexOf('1200000') === -1, "la valeur du budget média ne doit apparaître nulle part dans l'instantané");
+    });
   }
 
   suite("Unit — permissions (can())", () => {});
@@ -558,6 +574,34 @@ async function e2eTests() {
     await test("tâche marquée terminée (date de complétion posée)", () => {
       win.eval(`const t = DB.tasks.find(x => x.id === window.__tid); window.__chkStatus = t.status; window.__chkDate = !!t.completedDate;`);
       assert(win.__chkStatus === "Terminé" && win.__chkDate);
+    });
+
+    // Modèle de Campagne (STRATEGIE-PRODUIT.md C.1) — via le vrai modal, pas
+    // seulement l'objet passé directement à MCPS_VALIDATE plus haut.
+    win.openModal("project");
+    await test("les cases de canaux sont bien rendues dans le modal projet", () => {
+      assert(win.document.getElementById('chchk-social'), "case 'Réseaux sociaux' absente du modal");
+      assert(win.document.getElementById('fp-objective'), "select objectif absent du modal");
+      assert(win.document.getElementById('fp-mediabudget'), "champ budget média absent du modal");
+    });
+    win.eval(`
+      document.getElementById('fp-name').value = 'Campagne E2E';
+      document.getElementById('fp-client').value = '500';
+      toggleChannel('social'); toggleChannel('email');
+      document.getElementById('fp-objective').value = 'Notoriété';
+      document.getElementById('fp-mediabudget').value = '900000';
+    `);
+    win.submitProject();
+    await test("un projet créé avec des canaux devient une campagne", () => {
+      win.eval(`window.__camp = DB.projects.find(p=>p.name==='Campagne E2E');`);
+      assertEqual(win.__camp.channels.sort().join(','), 'email,social');
+      assertEqual(win.__camp.objective, 'Notoriété');
+      assertEqual(win.__camp.mediaBudget, 900000);
+      assert(win.isCampaign(win.__camp));
+    });
+    await test("un projet sans canal ni objectif n'est pas une campagne", () => {
+      win.eval(`window.__notCamp = DB.projects.find(p=>p.name==='Projet E2E');`);
+      assert(!win.isCampaign(win.__notCamp));
     });
   }
 

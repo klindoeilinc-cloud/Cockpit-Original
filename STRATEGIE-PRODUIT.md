@@ -205,7 +205,7 @@ sans les données pour y répondre.
 
 | # | Chantier | Pourquoi maintenant | Effort relatif |
 |---|---|---|---|
-| 1 | Modèle de Campagne dédié (canaux, budget média, dates de publication, objectif) — dérivé de `Project`, pas une réécriture | Débloque tout le reste (C.1) | Moyen |
+| 1 | **Livré** — Modèle de Campagne dédié (canaux, budget média, objectif, date de publication) — extension additive de `Project`, aucun champ requis | Débloque tout le reste (C.1) | Moyen |
 | 2 | Calendrier éditorial (vue mois/semaine par canal et statut) | Fonctionnalité la plus visible, la plus attendue (C.2) | Moyen |
 | 3 | Rôle "client" + portail en lecture/commentaire limité | Débloque l'approbation (C.3/C.4), déjà partiellement supporté par le RBAC existant | Moyen |
 | 4 | Workflow d'approbation créative (upload, commentaires positionnés, versions, statut) | Donne enfin un sens produit au champ `revisions` déjà central dans l'Intelligence Layer | Élevé |
