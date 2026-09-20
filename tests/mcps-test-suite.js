@@ -289,6 +289,32 @@ async function unitTests() {
       win.eval(`document.getElementById('cmdk-input').dispatchEvent(new Event('input'));`);
       assert(searchHtml.includes('Cache Test Client'));
     });
+
+    // CORRECTIF (AUDIT.md, section M.2) : depuis la séparation Client/Prospect,
+    // l'index de recherche n'indexait plus que DB.clients — un prospect était
+    // introuvable par la recherche ou la palette de commandes, silencieusement,
+    // depuis ce patch. Verrouillé ici pour ne jamais régresser à nouveau.
+    win.eval(`
+      DB.prospects.push({id:999, name:'Prospect Introuvable Avant Correctif', sector:'Tech', color:'#fff', type:'prospect', prospectStatus:'lead'});
+      saveDB();
+    `);
+    await test("un prospect (pas seulement un client) est trouvable par la recherche globale", () => {
+      win.onSearch('Prospect Introuvable');
+      const html = win.document.getElementById('search-results').innerHTML;
+      assert(html.includes('Prospect Introuvable Avant Correctif'), "un prospect doit être trouvable au même titre qu'un client depuis la barre de recherche");
+      assert(html.includes('Prospect'), "le résultat doit indiquer qu'il s'agit d'un prospect, pas d'un client, pour éviter toute confusion");
+    });
+    await test("un prospect est aussi trouvable via la palette de commandes (même cache partagé)", async () => {
+      win._cmdkOpen();
+      win.document.getElementById('cmdk-input').value = 'Prospect Introuvable';
+      win.eval(`document.getElementById('cmdk-input').dispatchEvent(new Event('input'));`);
+      // _cmdkRender est appelé avec un anti-rebond de 120ms (voir _cmdkDebounce
+      // dans js/07-ui-enhancements.js) — lire cmdk-results immédiatement après
+      // l'événement lirait le rendu précédent, pas celui déclenché par la frappe.
+      await wait(180);
+      const cmdkHtml = win.document.getElementById('cmdk-results').innerHTML;
+      assert(cmdkHtml.includes('Prospect Introuvable Avant Correctif'));
+    });
   }
 
   suite("Unit — sécurité (SRI) & environnements", () => {});

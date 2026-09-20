@@ -306,9 +306,19 @@ UI/UX Enterprise, puis du durcissement sécurité pour une V1 commerciale.
    V1 avec des organisations de taille modérée ; la migration vers des
    sous-collections par entité reste le chantier structurant suivant, et exige
    un vrai projet Firebase pour être validée sans risque.
-2. **Client/Prospect partiellement séparés.** Les tableaux sont distincts, les
-   points de mutation critiques traités ; il reste des lectures historiques à
-   migrer progressivement vers `getClients()` / `getProspects()`.
+2. ~~Client/Prospect partiellement séparés~~ — **le point le plus concret
+   résolu.** L'index de recherche globale (barre de recherche + palette de
+   commandes Cmd/Ctrl+K, `js/07-ui-enhancements.js`) n'avait jamais été mis à
+   jour après la séparation des deux tableaux : il n'indexait que
+   `DB.clients`, rendant tout prospect introuvable par la recherche,
+   silencieusement, depuis ce patch — exactement le type de régression que
+   cette section prévenait. Corrigé (`getClients().concat(getProspects())`),
+   avec distinction visuelle client/prospect dans les résultats, verrouillé
+   par 2 tests de non-régression. Des lectures ponctuelles de `DB.clients`
+   ailleurs dans le code restent correctes telles quelles (ex. `closedAt` ne
+   s'applique qu'aux clients, jamais aux prospects, par design de l'UI) —
+   vérifié au cas par cas plutôt que remplacées mécaniquement par
+   `getClients()`, pour ne pas introduire de faux positifs.
 3. **Fichier unique de 9 600 lignes éclaté en 8, pas en modules ES.** Choix
    délibéré : ce code s'est montré fragile aux questions de portée. Un passage
    à de vrais modules reste possible, mais demande sa propre campagne de tests.

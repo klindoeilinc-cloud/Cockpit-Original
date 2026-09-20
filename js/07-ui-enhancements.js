@@ -20,8 +20,14 @@
   function _mcpsRebuildSearchIndices(){
     if (typeof Fuse === 'undefined') { _mcpsSearchIdx = null; return; }
     const o = { threshold: 0.38, ignoreLocation: true };
+    // CORRECTIF (dette technique listée dans AUDIT.md, section M.2) : depuis
+    // la séparation Client/Prospect (PATCH #5b), les prospects vivent dans
+    // DB.prospects, un tableau distinct de DB.clients. Cet index n'avait
+    // jamais été mis à jour après cette migration : chercher le nom d'un
+    // prospect dans la barre de recherche ou la palette de commandes ne
+    // renvoyait plus aucun résultat, silencieusement, depuis ce patch.
     _mcpsSearchIdx = {
-      clients:  new Fuse(DB.clients,  { ...o, keys:['name','sector'] }),
+      clients:  new Fuse(getClients().concat(getProspects()), { ...o, keys:['name','sector'] }),
       projects: new Fuse(DB.projects, { ...o, keys:['name'] }),
       tasks:    new Fuse(DB.tasks,    { ...o, keys:['name'] }),
       invoices: new Fuse(DB.invoices||[], { ...o, keys:['number','label'] }),
@@ -44,13 +50,13 @@
       if (_canInv) invs = _mcpsSearchIdx.invoices.search(qTrim).slice(0,3).map(r=>r.item);
     } else {
       const ql = qTrim.toLowerCase();
-      clients = DB.clients.filter(c=>c.name.toLowerCase().includes(ql)||c.sector.toLowerCase().includes(ql)).slice(0,4);
+      clients = getClients().concat(getProspects()).filter(c=>c.name.toLowerCase().includes(ql)||c.sector.toLowerCase().includes(ql)).slice(0,4);
       projects = DB.projects.filter(p=>p.name.toLowerCase().includes(ql)).slice(0,4);
       tasks = DB.tasks.filter(t=>t.name.toLowerCase().includes(ql)).slice(0,4);
       if (_canInv) invs = (DB.invoices||[]).filter(i=>i.number.toLowerCase().includes(ql)||i.label.toLowerCase().includes(ql)).slice(0,3);
     }
     let html = '';
-    if (clients.length) { html += `<div class="sr-section">Clients</div>`; html += clients.map(c=>`<div class="sr-item" onclick="go('clients');setTimeout(()=>openClientDetail(${c.id}),200)"><span class="sr-icon">👤</span><span class="sr-name">${esc(c.name)}</span><span class="sr-sub">${esc(c.sector)}</span></div>`).join(''); }
+    if (clients.length) { html += `<div class="sr-section">Clients &amp; prospects</div>`; html += clients.map(c=>`<div class="sr-item" onclick="go('clients');setTimeout(()=>openClientDetail(${c.id}),200)"><span class="sr-icon">${c.type==='prospect'?'🎯':'👤'}</span><span class="sr-name">${esc(c.name)}</span><span class="sr-sub">${esc(c.sector)}${c.type==='prospect'?' · Prospect':''}</span></div>`).join(''); }
     if (projects.length) { html += `<div class="sr-section">Projets</div>`; html += projects.map(p=>{const cl=gc(p.clientId);return`<div class="sr-item" onclick="go('projects')"><span class="sr-icon">🗂</span><span class="sr-name">${esc(p.name)}</span><span class="sr-sub">${esc(cl?cl.name:'')}</span></div>`;}).join(''); }
     if (tasks.length) { html += `<div class="sr-section">Tâches</div>`; html += tasks.map(t=>{const cl=gc(t.clientId);return`<div class="sr-item" onclick="go('tasks')"><span class="sr-icon">📋</span><span class="sr-name">${esc(t.name)}</span><span class="sr-sub">${esc(cl?cl.name:'')}</span></div>`;}).join(''); }
     if (invs.length) { html += `<div class="sr-section">Factures</div>`; html += invs.map(i=>`<div class="sr-item" onclick="go('invoices')"><span class="sr-icon">💳</span><span class="sr-name">${esc(i.number)}</span><span class="sr-sub">${formatXOF(i.amount)}</span></div>`).join(''); }
@@ -95,7 +101,7 @@
         const clients = _mcpsSearchIdx.clients.search(q).slice(0,4).map(r=>r.item);
         const projects = _mcpsSearchIdx.projects.search(q).slice(0,4).map(r=>r.item);
         const tasks = _mcpsSearchIdx.tasks.search(q).slice(0,4).map(r=>r.item);
-        if (clients.length) dataHtml += `<div class="cmdk-section">Clients</div>` + clients.map(c=>`<div class="cmdk-item" data-run="client:${c.id}">${_cmdkIcon('user')}<span>${esc(c.name)}</span></div>`).join('');
+        if (clients.length) dataHtml += `<div class="cmdk-section">Clients &amp; prospects</div>` + clients.map(c=>`<div class="cmdk-item" data-run="client:${c.id}">${_cmdkIcon(c.type==='prospect'?'target':'user')}<span>${esc(c.name)}${c.type==='prospect'?' · Prospect':''}</span></div>`).join('');
         if (projects.length) dataHtml += `<div class="cmdk-section">Projets</div>` + projects.map(p=>`<div class="cmdk-item" data-run="project:${p.id}">${_cmdkIcon('folder')}<span>${esc(p.name)}</span></div>`).join('');
         if (tasks.length) dataHtml += `<div class="cmdk-section">Tâches</div>` + tasks.map(t=>`<div class="cmdk-item" data-run="task:${t.id}">${_cmdkIcon('check-square')}<span>${esc(t.name)}</span></div>`).join('');
       } else {
