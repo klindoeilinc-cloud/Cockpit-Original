@@ -297,16 +297,15 @@ dès le premier jour, sans dépendre de l'adoption de l'autre.
 2. Stabilisation de l'architecture agence existante (P0 de `AUDIT.md`,
    notamment l'éclatement du document unique par organisation), qui devient
    un prérequis renforcé si un pont inter-organisations est prévu ensuite.
-3. **Livré** — Rapport partagé en lecture seule (agence → client) : le plus
-   petit développement qui démontre la proposition de valeur, sans
-   intégration tierce ni choix de prestataire Mobile Money à trancher au
-   préalable. Bouton "🔗 Partager" sur chaque projet de la vue Rapport
-   Direction ; génère un lien `?share=orgId:shareId` consultable sans
-   compte, montrant statut/avancement/tâches/révisions d'un seul projet —
-   jamais de budget, d'heures internes ni de données d'un autre client
-   (voir `js/09-shared-reports.js`, règle Firestore dédiée dans
-   `firestore.rules`). Panneau "Mes liens partagés" (sidebar) pour lister et
-   révoquer les liens actifs. Peut déjà servir de support de démonstration
+3. **Livré** — Rapport partagé en lecture seule (agence → client), à deux
+   niveaux : un projet seul (bouton "🔗 Partager" dans le Rapport Direction)
+   ou tous les projets actifs d'un client regroupés (bouton "🔗 Partager"
+   dans la fiche client). Génère un lien `?share=orgId:shareId` consultable
+   sans compte, montrant statut/avancement/tâches/révisions — jamais de
+   budget, d'heures internes ni de données d'un autre client (voir
+   `js/09-shared-reports.js`, règle Firestore dédiée dans `firestore.rules`).
+   Panneau "Mes liens partagés" (sidebar) pour lister et révoquer les liens
+   actifs, des deux types. Peut déjà servir de support de démonstration
    pendant les entretiens de `VALIDATION-TERRAIN.md`.
    **Correctif important a posteriori** : la toute première version ne
    fonctionnait en réalité JAMAIS connecté au cloud — `MCPS_ORG_ID` est une

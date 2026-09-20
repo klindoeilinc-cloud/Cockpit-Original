@@ -290,6 +290,29 @@ async function unitTests() {
     });
   }
 
+  suite("Unit — Rapport partagé au niveau client (buildClientShareSnapshot)", () => {});
+  {
+    const client = { id: 20, name: "Client Multi-Projets", sector: "Commerce", budget: 9000000 };
+    const projects = [
+      { id: 201, name: "Campagne A", clientId: 20, status: "En cours", channels: ["social"], mediaBudget: 300000 },
+      { id: 202, name: "Campagne B (terminée)", clientId: 20, status: "Terminé" },
+      { id: 203, name: "Projet d'un autre client", clientId: 21, status: "En cours" },
+    ];
+    const tasks = [
+      { id: 300, projectId: 201, name: "Post lancement", status: "Terminé", revisions: 1 },
+    ];
+    const snap = win.buildClientShareSnapshot(client, projects, tasks);
+    await test("n'inclut que les projets actifs de CE client (pas terminés, pas d'un autre client)", () => {
+      assertEqual(snap.projects.length, 1);
+      assertEqual(snap.projects[0].projectName, "Campagne A");
+    });
+    await test("chaque projet imbriqué suit le même filtre de sécurité que le partage projet seul", () => {
+      assert(!('clientName' in snap.projects[0]), "clientName redondant au niveau projet dans une vue client — ne doit pas être dupliqué");
+      assert(JSON.stringify(snap).indexOf('300000') === -1, "le budget média ne doit pas fuiter non plus dans la vue groupée par client");
+      assert(JSON.stringify(snap).indexOf('9000000') === -1, "le budget du client ne doit jamais apparaître dans l'instantané partagé");
+    });
+  }
+
   suite("Unit — permissions (can())", () => {});
   // MCPS_ROLE non défini en mode local : can() doit tout autoriser (comportement historique solo)
   await test("can() autorise tout en mode local (pas de compte)", () => assert(win.can("client.delete") === true));
@@ -761,6 +784,29 @@ async function e2eTests() {
       const after = await win.listActiveShares();
       assertEqual(after.length, 0);
       assertEqual(win._sharedReports[before[0].id].active, false);
+    });
+
+    // Partage au niveau client (pas seulement projet) — bouton "🔗 Partager"
+    // dans la fiche client (cd-share-btn), ajouté après le partage projet.
+    win.eval(`
+      DB.projects.push({id:601, name:'Second projet du même client', clientId:600, status:'En cours'});
+      window.__before = Object.keys(_sharedReports).length;
+    `);
+    await test("le bouton Partager de la fiche client appelle bien shareClient()", () => {
+      win.eval(`openClientDetail(600);`);
+      assert(win.document.getElementById('cd-share-btn').onclick, "le bouton doit avoir un gestionnaire de clic assigné par openClientDetail()");
+    });
+    await test("shareClient() crée un rapport de type 'client' regroupant tous ses projets actifs", async () => {
+      await win.shareClient(600);
+      assertEqual(Object.keys(win._sharedReports).length, win.__before + 1);
+      const created = Object.values(win._sharedReports).find(s => s.type === 'client');
+      assert(created, "le document créé doit porter type:'client'");
+      assertEqual(created.snapshot.clientName, 'Client Partage');
+      assertEqual(created.snapshot.projects.length, 2);
+    });
+    await test("le partage client apparaît aussi dans listActiveShares(), à côté du partage projet", async () => {
+      const shares = await win.listActiveShares();
+      assert(shares.some(s => s.type === 'client' && s.snapshot.clientName === 'Client Partage'));
     });
   }
 

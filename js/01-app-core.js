@@ -2251,6 +2251,8 @@ function openClientDetail(cid) {
   document.getElementById('cd-sector').textContent=(SECTORS_META[c.sector]?.icon||'◈')+' '+c.sector;
   document.getElementById('cd-needs-top').innerHTML=(c.needs||[]).map(n=>needBadge(n)).join('');
   document.getElementById('cd-edit-btn').onclick=()=>{ closeClientDetail(); openEditClient(cid); };
+  const shareBtn = document.getElementById('cd-share-btn');
+  if (shareBtn) shareBtn.onclick = () => { if (typeof shareClient === 'function') shareClient(cid); };
 
   // ── Bouton Clôturer / Réactiver dans la topbar ──
   const clotureBtn = document.getElementById('cd-cloture-btn');

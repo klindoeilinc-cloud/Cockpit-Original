@@ -60,40 +60,69 @@ function _shareBaseUrl() {
   return location.origin + location.pathname;
 }
 
-async function shareProject(projectId) {
+// Un client "est actif" comme campagne — un client clôturé n'a pas de sens
+// à partager un suivi en temps réel. Prospects/appels d'offre exclus aussi :
+// aucun engagement contractuel à suivre pour eux à ce stade.
+function buildClientShareSnapshot(client, projects, tasks) {
+  const clientProjects = (projects || []).filter(p => p.clientId === client.id && p.status !== 'Terminé');
+  return {
+    clientName: String(client.name || ''),
+    sector: String(client.sector || ''),
+    // Chaque projet réutilise le même filtre que le partage au niveau
+    // projet (buildProjectShareSnapshot) — un seul point de vérité pour ce
+    // qui est sûr à exposer, pas une deuxième liste de champs à maintenir.
+    projects: clientProjects.map(p => {
+      const { clientName, ...rest } = buildProjectShareSnapshot(p, client, tasks);
+      return rest;
+    }),
+  };
+}
+window.buildClientShareSnapshot = buildClientShareSnapshot;
+
+// Écriture Firestore commune aux deux types de partage (projet, client) —
+// seule la construction de l'instantané diffère entre les deux.
+async function _persistShare(type, sourceId, snapshot) {
   const ctx = (typeof _mcpsAuthContext === 'function') ? _mcpsAuthContext() : { orgId: null, uid: null };
   if (!ctx.orgId || !(window.firebase && firebase.apps && firebase.apps.length)) {
     showToast('⚠️', 'Le partage nécessite un espace connecté au cloud (pas le mode local)', 'var(--amber)');
-    return;
+    return null;
   }
-  const project = (DB.projects || []).find(p => p.id === projectId);
-  if (!project) { showToast('⚠️', 'Projet introuvable', 'var(--red)'); return; }
-  const client = (typeof gc === 'function') ? gc(project.clientId) : (DB.clients || []).find(c => c.id === project.clientId);
-  const snapshot = buildProjectShareSnapshot(project, client, DB.tasks || []);
-
   const shareId = _shareRandomId();
   try {
-    const db = firebase.firestore();
-    await db.collection('orgs').doc(ctx.orgId).collection('shared_reports').doc(shareId).set({
-      type: 'project',
-      sourceId: project.id,
-      snapshot,
+    await firebase.firestore().collection('orgs').doc(ctx.orgId).collection('shared_reports').doc(shareId).set({
+      type, sourceId, snapshot,
       active: true,
       createdBy: ctx.uid,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
   } catch (e) {
-    console.error('shareProject', e);
+    console.error('_persistShare', e);
     showToast('⚠️', 'Échec de la création du lien de partage', 'var(--red)');
-    return;
+    return null;
   }
-
   const url = `${_shareBaseUrl()}?share=${encodeURIComponent(ctx.orgId)}:${shareId}`;
   _showShareLinkModal(url);
-  if (typeof _mcpsAudit === 'function') _mcpsAudit('CREATE', 'shared_report', shareId, { projectId: project.id });
+  if (typeof _mcpsAudit === 'function') _mcpsAudit('CREATE', 'shared_report', shareId, { type, sourceId });
+  return shareId;
+}
+
+async function shareProject(projectId) {
+  const project = (DB.projects || []).find(p => p.id === projectId);
+  if (!project) { showToast('⚠️', 'Projet introuvable', 'var(--red)'); return; }
+  const client = (typeof gc === 'function') ? gc(project.clientId) : (DB.clients || []).find(c => c.id === project.clientId);
+  const snapshot = buildProjectShareSnapshot(project, client, DB.tasks || []);
+  await _persistShare('project', project.id, snapshot);
 }
 window.shareProject = shareProject;
+
+async function shareClient(clientId) {
+  const client = (typeof gc === 'function') ? gc(clientId) : (DB.clients || []).find(c => c.id === clientId);
+  if (!client) { showToast('⚠️', 'Client introuvable', 'var(--red)'); return; }
+  const snapshot = buildClientShareSnapshot(client, DB.projects || [], DB.tasks || []);
+  await _persistShare('client', client.id, snapshot);
+}
+window.shareClient = shareClient;
 
 function _showShareLinkModal(url) {
   const box = document.createElement('div');
@@ -103,7 +132,7 @@ function _showShareLinkModal(url) {
     <div class="card" style="max-width:480px;width:92%;padding:22px 24px">
       <div style="font-weight:700;font-size:15px;margin-bottom:10px">🔗 Rapport partagé créé</div>
       <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px">
-        Ce lien montre uniquement l'avancement de ce projet (statut, tâches, échéance) —
+        Ce lien montre uniquement l'avancement (statut, tâches, échéance) —
         aucune donnée financière ni interne de l'agence. Le client n'a pas besoin de compte.
       </div>
       <input readonly value="${url.replace(/"/g, '&quot;')}" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);font-family:var(--mono);font-size:12px;margin-bottom:12px" onclick="this.select()">
@@ -171,14 +200,19 @@ async function showSharedReportsPanel() {
   const list = box.querySelector('#shared-reports-list');
   try {
     const shares = await listActiveShares();
-    list.innerHTML = shares.length ? shares.map(s => `
+    list.innerHTML = shares.length ? shares.map(s => {
+      const isClient = s.type === 'client';
+      const title = isClient ? (s.snapshot?.clientName || '(client supprimé)') : (s.snapshot?.projectName || '(projet supprimé)');
+      const subtitle = isClient ? `${(s.snapshot?.projects || []).length} projet(s)` : (s.snapshot?.clientName || '');
+      return `
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
         <div>
-          <div style="color:var(--text);font-weight:600">${_esc(s.snapshot?.projectName || '(projet supprimé)')}</div>
-          <div style="font-size:11px">${_esc(s.snapshot?.clientName || '')}</div>
+          <div style="color:var(--text);font-weight:600">${isClient ? '🏢' : '🗂'} ${_esc(title)}</div>
+          <div style="font-size:11px">${_esc(subtitle)}</div>
         </div>
         <button class="btn btn-danger btn-sm" onclick="revokeShare('${s.id}')">Révoquer</button>
-      </div>`).join('') : `<div style="padding:12px 0">Aucun lien actif pour le moment.</div>`;
+      </div>`;
+    }).join('') : `<div style="padding:12px 0">Aucun lien actif pour le moment.</div>`;
   } catch (e) {
     console.error('showSharedReportsPanel', e);
     list.innerHTML = 'Impossible de charger les liens partagés.';
@@ -218,7 +252,9 @@ async function _renderSharedReportView() {
       host.innerHTML = `<div class="shared-report-card"><h2>Lien indisponible</h2><p>Ce rapport a été révoqué par l'agence, ou le lien est incorrect.</p></div>`;
       return true;
     }
-    host.innerHTML = _shareReportHtml(snap.data().snapshot || {});
+    const shareType = snap.data().type || 'project';
+    const renderer = shareType === 'client' ? _shareClientReportHtml : _shareReportHtml;
+    host.innerHTML = renderer(snap.data().snapshot || {});
   } catch (e) {
     console.error('_renderSharedReportView', e);
     host.innerHTML = `<div class="shared-report-card"><h2>Impossible de charger ce rapport</h2><p>Vérifiez votre connexion et rechargez la page.</p></div>`;
@@ -226,7 +262,10 @@ async function _renderSharedReportView() {
   return true;
 }
 
-function _shareReportHtml(s) {
+// Contenu d'un projet, réutilisé à l'identique dans la vue projet seul et
+// dans chaque entrée de la vue client (buildClientShareSnapshot imbrique
+// des projets construits par buildProjectShareSnapshot — même forme).
+function _shareProjectCard(s) {
   const riskDot = { 'En cours': '🟡', 'Terminé': '🟢', 'Non démarré': '⚪' }[s.status] || '⚪';
   // MCPS_CHANNELS est déclaré en `const` dans js/01-app-core.js : accessible
   // ici comme identifiant global (même environnement lexical de premier
@@ -240,10 +279,8 @@ function _shareReportHtml(s) {
       <td>${t.revisions != null ? t.revisions : '—'}</td>
     </tr>`).join('') || `<tr><td colspan="3" style="color:#8892a6;text-align:center;padding:16px">Aucune tâche</td></tr>`;
   return `
-    <div class="shared-report-card">
-      <div class="shared-report-badge">Rapport partagé — lecture seule</div>
       <h2>${riskDot} ${_esc(s.projectName)}</h2>
-      <div class="shared-report-meta">${_esc(s.clientName)} · ${_esc(s.status)}${s.objective ? ' · Objectif : ' + _esc(s.objective) : ''} · échéance ${s.endDate ? _esc(s.endDate) : '—'}</div>
+      <div class="shared-report-meta">${s.clientName ? _esc(s.clientName) + ' · ' : ''}${_esc(s.status)}${s.objective ? ' · Objectif : ' + _esc(s.objective) : ''} · échéance ${s.endDate ? _esc(s.endDate) : '—'}</div>
       ${channelBadges ? `<div style="margin-bottom:14px">${channelBadges}</div>` : ''}
       <div class="shared-report-progress-wrap">
         <div class="shared-report-progress-bar"><div style="width:${s.progressPct || 0}%"></div></div>
@@ -252,7 +289,29 @@ function _shareReportHtml(s) {
       <table class="shared-report-table">
         <thead><tr><th>Tâche</th><th>Statut</th><th>Révisions</th></tr></thead>
         <tbody>${taskRows}</tbody>
-      </table>
+      </table>`;
+}
+
+function _shareReportHtml(s) {
+  return `
+    <div class="shared-report-card">
+      <div class="shared-report-badge">Rapport partagé — lecture seule</div>
+      ${_shareProjectCard(s)}
+      <div class="shared-report-footer">Généré par MCPS Cockpit — ce lien ne donne accès à aucune autre donnée de l'agence.</div>
+    </div>`;
+}
+
+function _shareClientReportHtml(s) {
+  const projects = s.projects || [];
+  const projectBlocks = projects.length
+    ? projects.map((p, i) => `<div style="${i < projects.length - 1 ? 'margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)' : ''}">${_shareProjectCard(p)}</div>`).join('')
+    : `<div style="padding:16px 0;color:var(--text-muted);font-size:12.5px">Aucun projet actif pour le moment.</div>`;
+  return `
+    <div class="shared-report-card">
+      <div class="shared-report-badge">Rapport partagé — lecture seule</div>
+      <h2>${_esc(s.clientName)}</h2>
+      <div class="shared-report-meta">${_esc(s.sector)} · ${projects.length} projet${projects.length>1?'s':''} actif${projects.length>1?'s':''}</div>
+      ${projectBlocks}
       <div class="shared-report-footer">Généré par MCPS Cockpit — ce lien ne donne accès à aucune autre donnée de l'agence.</div>
     </div>`;
 }
