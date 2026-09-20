@@ -1,0 +1,19 @@
+{
+  "name": "mcps-cockpit",
+  "version": "2.0.0",
+  "description": "MCPS Cockpit Production — structure modulaire (index.html + css/ + js/), suite de tests automatisés (unitaires, intégration, E2E)",
+  "main": "index.html",
+  "scripts": {
+    "test": "node tests/mcps-test-suite.js .",
+    "test:e2e": "playwright test",
+    "test:backend": "node tests/functions.test.js",
+    "test:all": "npm test && npm run test:backend"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "jsdom": "^24.0.0"
+  }
+}

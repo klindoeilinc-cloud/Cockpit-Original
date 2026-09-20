@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MCPS — Cockpit Production</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0f1f38">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MCPS">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.js" integrity="sha384-tgbB5AKnszdcfwcZtTfuhR3Ko1XZdlDfsLtkxiiAZiVkkXCkFmp+FQFh+V/UTo54" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.462.0/dist/umd/lucide.min.js" integrity="sha384-8nT3SpButyvenpAdKYPJzXdSz3zidMGduMoaMvwjKnAWVv238n6P1mhveiJJQWrV" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" integrity="sha384-BSxuMLxX+FCbTdYec3TbXlnMGEEM2QXTFdtDaveen71o+jswm2J36+xFqp8k4VHM" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.2/dist/apexcharts.min.js" integrity="sha384-6foQBJHuUSRZT7FlYD0AkFDsYH7bowmqBulLZUb8S1qBoEItSgOaXiGkxDn9kSLP" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js" integrity="sha384-PCSoOZTpbkikBEtd/+uV3WNdc676i9KUf01KOA8CnJotvlx8rRrETbDuwdjqTYvt" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js" integrity="sha384-5JqMv4L/Xa0hfvtF06qboNdhvuYXUku9ZrhZh3bSk8VXF0A/RuSLHpLsSV9Zqhl6" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js" integrity="sha384-G+W4MJlWkqyxrTEDGqlYx0mcjIOCc60/SvgTHEM8GSs85gMIzcJ2FERdERxhEJ88" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/tippy.js@6.3.7/dist/tippy-bundle.umd.min.js" integrity="sha384-AiTRpehQ7zqeua0Ypfa6Q4ki/ddhczZxrKtiQbTQUlJIhBkTeyoZP9/W/5ulFt29" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="./css/styles.css">
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.js" integrity="sha384-/Ko/tqVwPYurnBe+Mj8WWw+39WmyOZn/kU+neqXn4hRxGI575k07mB/hIekAT51+" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js" integrity="sha384-fCAW/rDWORTbQXSiB7mOg0QtQ5c+r0f544y6XoKjuVva0nMBlCpNUjiFeG5iMdS3" crossorigin="anonymous"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-functions-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body class="auth-locked">
+
+<!-- ══════════════════ AUTH GATE ══════════════════ -->
+<div id="auth-screen" role="dialog" aria-modal="true" aria-label="Connexion">
+  <div class="auth-box" id="auth-box">
+    <div class="auth-logo">MCPS</div>
+    <div class="auth-sub">Marko Creative Performance System</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="auth-tab-login" onclick="_authSwitchTab('login')">Connexion</div>
+      <div class="auth-tab" id="auth-tab-signup" onclick="_authSwitchTab('signup')">Créer un espace</div>
+    </div>
+    <div class="auth-err" id="auth-err"></div>
+    <div class="auth-fg"><input class="fin" type="email" id="auth-email" placeholder="Adresse email" autocomplete="username"></div>
+    <div class="auth-fg"><input class="fin" type="password" id="auth-password" placeholder="Mot de passe" autocomplete="current-password"></div>
+    <div class="auth-fg" id="auth-orgname-fg" style="display:none"><input class="fin" id="auth-orgname" placeholder="Nom de votre agence / équipe"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" id="auth-submit-btn" onclick="_authSubmit()">Se connecter</button>
+    <div style="text-align:center;margin-top:16px;font-size:11px">
+      <a href="./legal-fr.html" target="_blank" style="color:var(--text-muted)">Mentions légales &amp; Confidentialité</a>
+    </div>
+  </div>
+  <div id="auth-setup-notice" style="display:none">
+    ⚙️ Ce cockpit n'est pas encore connecté à un projet Firebase.<br>
+    Créez un projet sur <strong>console.firebase.google.com</strong>, activez <strong>Authentication</strong> (Email/Mot de passe) et <strong>Firestore</strong>, puis renseignez votre configuration dans <code>window.MCPS_CONFIG.firebase</code> (tout en haut du code source) pour activer les comptes multi-utilisateurs.
+    <div style="margin-top:18px"><button class="btn btn-ghost" onclick="_authUnlockLocal()">Continuer en mode local (sans compte)</button></div>
+  </div>
+</div>
+
+<!-- ══════════════════ PALETTE DE COMMANDES (Cmd/Ctrl+K) ══════════════════ -->
+<div id="cmdk-overlay" role="dialog" aria-modal="true" aria-label="Palette de commandes" onclick="if(event.target===this)_cmdkClose()">
+  <div id="cmdk-box">
+    <div id="cmdk-input-row">
+      <i data-lucide="search" style="width:16px;height:16px;flex-shrink:0;color:var(--text-muted)"></i>
+      <input id="cmdk-input" aria-label="Rechercher ou lancer une action" placeholder="Rechercher ou lancer une action… (client, projet, tâche, « nouveau »…)" autocomplete="off">
+      <span class="kbd-hint">Échap</span>
+    </div>
+    <div id="cmdk-results"></div>
+  </div>
+</div>
+
+<!-- ══════════════════ JOURNAL D'ACTIVITÉ (audit log, admin) ══════════════════ -->
+<div id="audit-log-overlay" role="dialog" aria-modal="true" aria-label="Journal d'activité" onclick="if(event.target===this)_closeAuditLog()">
+  <div id="audit-log-box">
+    <div id="audit-log-header">
+      <span>🕐 Journal d'activité</span>
+      <span id="audit-log-close" onclick="_closeAuditLog()" style="cursor:pointer;color:var(--text-muted)">✕</span>
+    </div>
+    <div id="audit-log-list"><div class="cmdk-empty">Chargement…</div></div>
+  </div>
+</div>
+
+<div class="hamburger" onclick="toggleSidebar()" id="hamburger-btn" aria-label="Menu"><i data-lucide="menu"></i></div>
+<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+<!-- ══════════════════ SIDEBAR ══════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-logo" title="MCPS — Marko Creative Performance System">
+    <div class="sb-brand">
+      <button type="button" class="sb-mark" id="sb-mark" aria-label="Logo de l'organisation" aria-haspopup="menu" aria-expanded="false" onclick="_mcpsLogoMenuToggle(event)">
+        <span class="sb-mark-txt" aria-hidden="true">M</span>
+        <img class="sb-mark-img" alt="" hidden>
+        <span class="sb-mark-edit" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L8 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
+      </button>
+      <div class="sb-id">
+        <div class="sb-title">MCPS</div>
+        <div class="sb-sub">Cockpit Production Créative</div>
+      </div>
+    </div>
+    <div class="sb-meta">
+      <span class="sb-status"><i class="sb-dot" aria-hidden="true"></i>Opérationnel</span>
+      <span id="mcps-env-badge" class="sb-env" hidden></span>
+    </div>
+    <div class="sb-pop" id="sb-logo-pop" role="menu" hidden>
+      <button type="button" role="menuitem" class="sb-pop-item" id="sb-logo-pick" onclick="_mcpsLogoPick()">Importer un logo</button>
+      <button type="button" role="menuitem" class="sb-pop-item sb-pop-danger" id="sb-logo-remove" onclick="_mcpsLogoRemove()" hidden>Retirer le logo</button>
+      <div class="sb-pop-hint">PNG, JPG, SVG ou WebP. Un format carré rend mieux.</div>
+    </div>
+    <input type="file" id="sb-logo-file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section" data-i18n="sec.intelligence">MCPS Intelligence</div>
+    <div class="nav-item" data-view="intelligence" onclick="go('intelligence')"><span class="nav-icon"><i data-lucide="brain-circuit"></i></span> <span data-i18n="nav.intelligence">Intelligence Layer</span></div>
+
+    <div class="sb-section" data-i18n="sec.overview">Vue d'ensemble</div>
+    <div class="nav-item" data-view="dashboard" onclick="go('dashboard')"><span class="nav-icon"><i data-lucide="layout-dashboard"></i></span> <span data-i18n="nav.dashboard">Command Center</span></div>
+    <div class="nav-item" data-view="today" onclick="go('today')"><span class="nav-icon"><i data-lucide="sunrise"></i></span> <span data-i18n="nav.today">Aujourd'hui</span><span class="nav-badge" id="nb-follow" style="display:none">0</span></div>
+    <div class="nav-item" data-view="sectors" onclick="go('sectors')"><span class="nav-icon"><i data-lucide="shapes"></i></span> <span data-i18n="nav.sectors">Secteurs d'Activité</span></div>
+
+    <div class="sb-section" data-i18n="sec.work">Travail</div>
+    <div class="nav-item active" data-view="clients" onclick="go('clients')"><span class="nav-icon"><i data-lucide="users"></i></span> <span data-i18n="nav.clients">Clients</span></div>
+    <div class="nav-item" data-view="projects" onclick="go('projects')"><span class="nav-icon"><i data-lucide="folder-kanban"></i></span> <span data-i18n="nav.projects">Projets</span></div>
+    <div class="nav-item" data-view="tasks" onclick="go('tasks')"><span class="nav-icon"><i data-lucide="list-checks"></i></span> <span data-i18n="nav.tasks">Tâches</span><span class="nav-badge" id="nb-late" style="display: inline;">4</span></div>
+
+    <div class="sb-section" data-i18n="sec.people">Équipe</div>
+    <div class="nav-item" data-view="team" onclick="go('team')"><span class="nav-icon"><i data-lucide="users-round"></i></span> <span data-i18n="nav.team">Équipe</span></div>
+
+    <div class="sb-section" data-i18n="sec.performance">Performance</div>
+    <div class="nav-item" data-view="reports" onclick="go('reports')"><span class="nav-icon"><i data-lucide="bar-chart-3"></i></span> <span data-i18n="nav.reports">Rapports</span></div>
+    <div class="nav-item" data-view="directorreport" onclick="go('directorreport')"><span class="nav-icon"><i data-lucide="file-bar-chart"></i></span> Rapport Direction</div>
+
+    <div class="sb-section" data-i18n="sec.operations">Opérations</div>
+    <div class="nav-item" data-view="suivi" onclick="go('suivi')"><span class="nav-icon"><i data-lucide="book-open-check"></i></span> <span data-i18n="nav.suivi">Suivi Tâches</span></div>
+    <div class="nav-item" data-view="todo" onclick="go('todo')"><span class="nav-icon"><i data-lucide="check-square"></i></span> <span data-i18n="nav.todo">To-Do List</span></div>
+
+    <div class="sb-section" data-i18n="sec.workspace">Espace de travail</div>
+    <div class="nav-item" onclick="openBillingPanel()"><span class="nav-icon"><i data-lucide="credit-card"></i></span> <span data-i18n="btn.billing">Facturation</span> <span id="plan-badge" style="margin-left:auto;font-size:9px;font-weight:700;padding:1px 7px;border-radius:8px;background:var(--surface3);color:var(--text-muted)"></span></div>
+    <div class="nav-item" id="btn-brand-settings" style="display:none" onclick="openBrandingPanel()"><span class="nav-icon"><i data-lucide="palette"></i></span> <span data-i18n="btn.branding">Marque blanche</span></div>
+  </nav>
+  <div class="sb-footer">
+    <button class="save-file-btn" id="save-file-btn" onclick="saveToFile()">
+      <span class="unsaved-dot"></span>
+      <div style="flex:1">
+        <span>💾 Sauvegarder le fichier <span style="font-size:10px;opacity:.6;font-family:var(--mono)">[Ctrl+S]</span></span>
+        <span class="save-method-lbl" id="save-method-lbl">✓ Sauvegardé (auto)</span>
+      </div><span class="kbd-hint" style="margin-left: auto; opacity: 0.6;">Ctrl+S</span></button>
+
+    <!-- Outils repliables : la navigation garde la priorité verticale -->
+    <button class="sb-tools-toggle" id="sb-tools-toggle" onclick="_toggleSidebarTools()" aria-expanded="false" aria-controls="sb-tools">
+      <span>⚙️</span> <span>Outils</span><span class="sb-tools-caret">▲</span>
+    </button>
+    <div class="sb-tools" id="sb-tools">
+      <button class="sb-btn" onclick="toggleTheme()"><span id="theme-ico">🌙</span><span id="theme-lbl">Mode Sombre</span></button>
+      <button class="sb-btn" onclick="openExport()"><span>⬇</span> <span data-i18n="btn.exportData">Exporter données</span></button>
+      <button id="sidebar-pdf-btn" class="sb-btn" onclick="openPDFModal()"><span>📄</span> <span data-i18n="btn.exportPdf">Export PDF dashboard</span></button>
+      <button class="sb-btn" onclick="_enableBrowserNotifications()"><span>🔔</span> <span data-i18n="btn.notif">Notifications navigateur</span></button>
+      <button class="sb-btn" id="btn-connect-calendar" onclick="_connectGoogleCalendar()"><span>📅</span> <span data-i18n="btn.calendar">Connecter Google Agenda</span></button>
+      <button class="sb-btn" onclick="openHelpPanel()"><span>❓</span> <span data-i18n="btn.help">Aide &amp; Support</span></button>
+      <button class="sb-btn" id="btn-invite-teammate" style="display:none" onclick="_inviteTeammate()"><span>➕</span> <span data-i18n="btn.invite">Inviter un collaborateur</span></button>
+      <button class="sb-btn" id="btn-audit-log" style="display:none" onclick="_showAuditLog()"><span>🕐</span> Journal d'activité</button>
+      <button class="sb-btn" onclick="_toggleLang()"><span>🌐</span> <span id="lang-toggle-lbl">English</span></button>
+    </div>
+  <div id="mcps-sync-status" style="display:none;padding:6px 6px 0;font-size:10.5px;color:var(--text-muted);align-items:center;gap:5px" title="État de synchronisation cloud">
+    <span id="mcps-sync-icon">🟢</span><span id="mcps-sync-label">Synchronisé</span>
+  </div>
+  <div id="auth-user-chip" style="display:none;padding:8px 6px 2px;font-size:10.5px;color:var(--text-muted);display:flex;align-items:center;justify-content:space-between;gap:6px">
+    <span id="auth-user-email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+    <a href="#" onclick="_authLogout();return false" style="color:var(--red);flex-shrink:0">Déconnexion</a>
+  </div>
+  </div>
+</aside>
+
+<!-- ══════════════════ MAIN ══════════════════ -->
+<main class="main">
+  <div class="alert-bar danger" id="alertBar" title="Voir les tâches en retard" style="cursor: pointer;"><div class="alert-pulse"></div><span id="alertTxt">🟢 Aucune donnée pour l'instant — ajoutez votre premier client pour commencer</span></div>
+
+  <div class="topbar">
+    <div><div class="page-heading" id="pageTitle">Clients</div><div class="page-sub" id="pageSub">Gérez vos clients et leurs besoins</div></div>
+    <div class="topbar-right" id="topbarRight"><button id="topbar-pdf-btn" class="btn btn-pdf" style="margin-right: 8px;" onclick="openPDFModal()">📄 Export PDF</button>
+      <!-- GLOBAL SEARCH -->
+      <div class="search-wrap" id="search-wrap">
+        <span class="search-ico">🔍</span>
+        <input class="search-input" id="search-input" aria-label="Rechercher un client, un projet ou une tâche" placeholder="Rechercher client, projet, tâche…" onblur="setTimeout(()=>closeSearch(),200)">
+        <div class="search-results" id="search-results"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+  <!-- ═══ DASHBOARD ═══ -->
+  <div class="view" id="view-intelligence"></div>
+
+  <div class="view" id="view-dashboard">
+    <!-- Quick Actions — STEP 08 (Command Center) : actions principales, sans dupliquer de logique existante -->
+    <div style="display:flex;gap:var(--space-2);margin-bottom:var(--space-4);flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" onclick="openModal('client')"><i data-lucide="user-plus" style="width:14px;height:14px"></i> Nouveau client</button>
+      <button class="btn btn-ghost btn-sm" onclick="openModal('project')"><i data-lucide="folder-plus" style="width:14px;height:14px"></i> Nouveau projet</button>
+      <button class="btn btn-ghost btn-sm" onclick="openModal('task')"><i data-lucide="list-plus" style="width:14px;height:14px"></i> Nouvelle tâche</button>
+      <button class="btn btn-ghost btn-sm" onclick="go('intelligence')" style="margin-left:auto"><i data-lucide="brain-circuit" style="width:14px;height:14px"></i> Voir l'Intelligence Layer</button>
+    </div>
+    <!-- Onboarding : guide de démarrage, visible uniquement tant que l'espace est vide -->
+    <div id="dash-empty-workspace" style="display:none;margin-bottom:var(--space-4)"></div>
+    <!-- Attention Required — consolide des données déjà calculées ailleurs (retards, factures en retard) en un seul repère visuel clair -->
+    <div id="dash-attention-card" style="display:none;margin-bottom:var(--space-4)"></div>
+    <div class="g g4" style="margin-bottom:14px">
+      <div class="kpi" style="--kpi-c:var(--accent)"><div class="kpi-icon">👥</div><div class="kpi-val" id="kpi-c">11</div><div class="kpi-lbl">Clients actifs</div></div>
+      <div class="kpi" style="--kpi-c:var(--purple)"><div class="kpi-icon">🗂</div><div class="kpi-val" id="kpi-p">36</div><div class="kpi-lbl">Projets totaux</div></div>
+      <div class="kpi" style="--kpi-c:var(--amber)"><div class="kpi-icon">📋</div><div class="kpi-val" id="kpi-t">66</div><div class="kpi-lbl">Tâches totales</div></div>
+      <div class="kpi" style="--kpi-c:var(--green)"><div class="kpi-icon">✅</div><div class="kpi-val" id="kpi-d">43</div><div class="kpi-lbl">Tâches terminées</div></div>
+    </div>
+    <!-- ANALYTICS CLIENTS/PROSPECTS -->
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 14px;" id="dash-analytics-strip">
+      <div class="kpi" style="--kpi-c:var(--green)"><div class="kpi-icon">✅</div><div class="kpi-val" id="kpi-clients-actifs">11</div><div class="kpi-lbl">Clients actifs</div></div>
+      <div class="kpi" style="--kpi-c:var(--purple)"><div class="kpi-icon">🎯</div><div class="kpi-val" id="kpi-prospects-total">7</div><div class="kpi-lbl">Prospects</div></div>
+      <div class="kpi" style="--kpi-c:var(--accent)"><div class="kpi-icon">🔄</div><div class="kpi-val" id="kpi-prospects-convertis">2</div><div class="kpi-lbl">Convertis en clients</div></div>
+      <div class="kpi" style="--kpi-c:var(--amber)"><div class="kpi-icon">🔒</div><div class="kpi-val" id="kpi-clients-clotures">2</div><div class="kpi-lbl">Clients clôturés</div></div>
+    <div class="kpi" style="--kpi-c: #60a5fa;"><div class="kpi-icon">📂</div><div class="kpi-val" id="kpi-appels-offres">1</div><div class="kpi-lbl">Appels d'offre</div></div></div><div id="dash-converted-strip-wrap" class="card" style="margin-bottom: 14px;"><div class="card-hd"><div class="card-title">🔄 Clients convertis depuis le pipeline</div></div><div id="dash-converted-strip" class="converted-strip"></div></div>
+    <!-- DISTRIBUTION PAR CLIENT -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title" id="dash-distrib-title">📁 Projets par client</div>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-sm" id="dash-distrib-btn-projects" onclick="setDashDistrib('projects')" style="font-size: 10.5px; padding: 3px 9px; background: var(--accent); color: rgb(0, 0, 0);">Projets</button>
+            <button class="btn btn-ghost btn-sm" id="dash-distrib-btn-tasks" onclick="setDashDistrib('tasks')" style="font-size: 10.5px; padding: 3px 9px;">Tâches</button>
+            <button class="btn btn-ghost btn-sm" id="dash-distrib-btn-status" onclick="setDashDistrib('status')" style="font-size: 10.5px; padding: 3px 9px;">Statuts</button>
+          </div>
+        </div>
+        <div id="dash-client-bars" style="display:flex;flex-direction:column;gap:7px;max-height:260px;overflow-y:auto"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">⚡ Statut des tâches</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div style="text-align:center;padding:10px 6px;background:var(--green-dim);border-radius:8px">
+            <div style="font-family:var(--mono);font-size:20px;font-weight:800;color:var(--green)" id="dstat-done">61</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px">Terminées</div>
+          </div>
+          <div style="text-align:center;padding:10px 6px;background:var(--accent-dim);border-radius:8px">
+            <div style="font-family:var(--mono);font-size:20px;font-weight:800;color:var(--accent)" id="dstat-prog">5</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px">En cours</div>
+          </div>
+          <div style="text-align:center;padding:10px 6px;background:var(--surface2);border-radius:8px">
+            <div style="font-family:var(--mono);font-size:20px;font-weight:800;color:var(--text-muted)" id="dstat-todo">7</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px">Non démarrées</div>
+          </div>
+          <div style="text-align:center;padding:10px 6px;background:var(--red-dim);border-radius:8px">
+            <div style="font-family:var(--mono);font-size:20px;font-weight:800;color:var(--red)" id="dstat-late">4</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px">En retard</div>
+          </div>
+        </div>
+        <div id="dash-status-bars" style="display:flex;flex-direction:column;gap:5px;max-height:160px;overflow-y:auto"></div>
+      </div>
+    </div>
+    <!-- CLIENTS/PROSPECTS LISTES -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">👥 Clients actifs</div><button class="btn btn-ghost btn-sm" onclick="_clientActiveTab='client';go('clients')">Voir tous →</button></div>
+        <div id="dash-clients-list" style="display:flex;flex-direction:column;gap:0;max-height:220px;overflow-y:auto"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">🎯 Prospects en cours</div><button class="btn btn-ghost btn-sm" onclick="_clientActiveTab='prospect';go('clients')">Voir tous →</button></div>
+        <div id="dash-prospects-list" style="display:flex;flex-direction:column;gap:0;max-height:220px;overflow-y:auto"><div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openProspectModal(18)">
+      <div style="width:30px;height:30px;border-radius:7px;background:#ffdd00;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#000;flex-shrink:0">MC</div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">NOVATECH GROUP</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">🎯 Prospect</div>
+      </div>
+      <button class="btn btn-sm" style="background:var(--green-dim);color:var(--green);border:none;font-size:10px;padding:2px 7px;flex-shrink:0" onclick="event.stopPropagation();convertToClient(18)">→ Client</button>
+    </div><div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openProspectModal(20)">
+      <div style="width:30px;height:30px;border-radius:7px;background:#0b2d51;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#000;flex-shrink:0">OP</div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">CEDAR PROPERTIES</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">🤝 Négociation</div>
+      </div>
+      <button class="btn btn-sm" style="background:var(--green-dim);color:var(--green);border:none;font-size:10px;padding:2px 7px;flex-shrink:0" onclick="event.stopPropagation();convertToClient(20)">→ Client</button>
+    </div><div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openProspectModal(24)">
+      <div style="width:30px;height:30px;border-radius:7px;background:#3e00b3;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#000;flex-shrink:0">SA</div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">ATLAS ASSURANCES</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">📄 Proposition</div>
+      </div>
+      <button class="btn btn-sm" style="background:var(--green-dim);color:var(--green);border:none;font-size:10px;padding:2px 7px;flex-shrink:0" onclick="event.stopPropagation();convertToClient(24)">→ Client</button>
+    </div><div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openProspectModal(25)">
+      <div style="width:30px;height:30px;border-radius:7px;background:#800000;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#000;flex-shrink:0">S</div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">BRIGHTFOOD SA</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">🎯 Prospect</div>
+      </div>
+      <button class="btn btn-sm" style="background:var(--green-dim);color:var(--green);border:none;font-size:10px;padding:2px 7px;flex-shrink:0" onclick="event.stopPropagation();convertToClient(25)">→ Client</button>
+    </div><div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openProspectModal(29)">
+      <div style="width:30px;height:30px;border-radius:7px;background:#ff0026;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#000;flex-shrink:0">F&amp;</div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">FOCUS &amp; FAITS DIVERS</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">🌱 Nouveau lead</div>
+      </div>
+      <button class="btn btn-sm" style="background:var(--green-dim);color:var(--green);border:none;font-size:10px;padding:2px 7px;flex-shrink:0" onclick="event.stopPropagation();convertToClient(29)">→ Client</button>
+    </div><div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openProspectModal(30)">
+      <div style="width:30px;height:30px;border-radius:7px;background:#00c8ff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#000;flex-shrink:0">CT</div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">LUMEN TECHNOLOGIES</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">🌱 Nouveau lead</div>
+      </div>
+      <button class="btn btn-sm" style="background:var(--green-dim);color:var(--green);border:none;font-size:10px;padding:2px 7px;flex-shrink:0" onclick="event.stopPropagation();convertToClient(30)">→ Client</button>
+    </div><div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openProspectModal(31)">
+      <div style="width:30px;height:30px;border-radius:7px;background:#00c8ff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#000;flex-shrink:0">C</div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">SAVANE DISTRIBUTION</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">🌱 Nouveau lead</div>
+      </div>
+      <button class="btn btn-sm" style="background:var(--green-dim);color:var(--green);border:none;font-size:10px;padding:2px 7px;flex-shrink:0" onclick="event.stopPropagation();convertToClient(31)">→ Client</button>
+    </div></div>
+      </div>
+    </div>
+    <!-- CLÔTURÉS (si existants) -->
+    <div id="dash-clotures-section" style="margin-bottom: 14px; display: block;">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">🔒 Clients clôturés (sortants)</div>
+          <button class="btn btn-ghost btn-sm" onclick="_clientActiveTab='cloture';go('clients')">Voir →</button>
+        </div>
+        <div id="dash-clotures-list" style="display:flex;flex-direction:column;gap:0;max-height:180px;overflow-y:auto"></div>
+      </div>
+    </div>
+    <!-- FINANCIAL STRIP -->
+    <div class="g g4" style="margin-bottom:14px" id="fin-strip">
+      <div class="fin-kpi" style="--fk-c:var(--green)">
+        <div style="font-size:16px;margin-bottom:6px">💰</div>
+        <div class="fin-kpi-val" id="fk-paid" style="color:var(--green)">0</div>
+        <div class="fin-kpi-lbl">CA encaissé (XOF)</div>
+      </div>
+      <div class="fin-kpi" style="--fk-c:var(--accent)">
+        <div style="font-size:16px;margin-bottom:6px">📤</div>
+        <div class="fin-kpi-val" id="fk-sent" style="color:var(--accent)">0</div>
+        <div class="fin-kpi-lbl">Factures envoyées (XOF)</div>
+      </div>
+      <div class="fin-kpi" style="--fk-c:var(--red)">
+        <div style="font-size:16px;margin-bottom:6px">⚠️</div>
+        <div class="fin-kpi-val" id="fk-late" style="color:var(--red)">0</div>
+        <div class="fin-kpi-lbl">En retard (XOF)</div>
+      </div>
+      <div class="fin-kpi" style="--fk-c:var(--amber)">
+        <div style="font-size:16px;margin-bottom:6px">📋</div>
+        <div class="fin-kpi-val" id="fk-total" style="color:var(--amber)">0</div>
+        <div class="fin-kpi-lbl">Portfolio total (XOF)</div>
+      </div>
+    </div>
+    <div class="g g2" style="margin-bottom:14px">
+      <div class="card" style="display:flex;align-items:center;gap:22px">
+        <div class="ring-wrap" id="dash-ring">
+          <svg width="96" height="96" viewBox="0 0 96 96"><circle class="ring-bg" cx="48" cy="48" r="40"></circle><circle class="ring-fill" id="ring-c" cx="48" cy="48" r="40" stroke-dasharray="251" stroke-dashoffset="251" stroke="var(--accent)" style="stroke-dashoffset: 85.4513; stroke: var(--accent);"></circle></svg>
+          <div class="ring-lbl"><div class="ring-val" id="ring-v">66</div><div class="ring-max">/100</div></div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:3px">Score d'efficacité global</div>
+          <div style="font-family: var(--head); font-size: 20px; font-weight: 800; color: var(--accent);" id="ring-lv">🔵 Bon</div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;line-height:1.5" id="ring-desc">Bonne performance. Quelques ajustements possibles.</div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;gap:7px;justify-content:center">
+        <div class="card-title" style="margin-bottom:2px">État des tâches</div>
+        <div class="mstat"><span>✅</span><span class="mstat-lbl">Terminées</span><span class="mstat-val" id="ms-done" style="color:var(--green)">43</span></div>
+        <div class="mstat"><span>⚡</span><span class="mstat-lbl">En cours</span><span class="mstat-val" id="ms-prog" style="color:var(--accent)">13</span></div>
+        <div class="mstat"><span>⏸</span><span class="mstat-lbl">Non démarrées</span><span class="mstat-val" id="ms-todo" style="color:var(--text-muted)">10</span></div>
+        <div class="mstat"><span>⏱</span><span class="mstat-lbl">Moy. par tâche</span><span class="mstat-val" id="ms-avg" style="color:var(--amber)">32.8h</span></div>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-bar"><div class="tbl-ttl">⚡ Tâches actives</div></div>
+      <table><thead><tr><th>Tâche</th><th>Client</th><th>Projet</th><th>Statut</th><th>Progression</th><th>Échéance</th></tr></thead>
+      <tbody id="dash-tasks"></tbody></table>
+    </div>
+
+
+    <!-- ═══ SECTION RESSOURCES CLIENTS ═══ -->
+    <div class="dash-section-hd" style="margin-top:24px">
+      <div class="dash-section-title">🔥 Clients mobilisant le plus de ressources</div>
+      <button class="btn btn-ghost btn-sm" onclick="go('tasks')">Voir toutes les tâches →</button>
+    </div>
+    <div id="dash-resource-grid" class="resource-grid"></div>
+
+    <!-- ═══ SECTION TOP CLIENTS ═══ -->
+    <div class="dash-section-hd" style="margin-top:8px">
+      <div class="dash-section-title">⚡ Charge active par client</div>
+    </div>
+    <div id="dash-workload-bars" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px"></div>
+
+    <!-- ═══ SECTION PROSPECTS ═══ -->
+    <div class="dash-section-hd">
+      <div class="dash-section-title">🎯 Pipeline Prospects <span class="dash-section-count" style="color:var(--purple)" id="dash-prospect-count">7</span></div>
+      <button class="btn" style="background:var(--purple-dim);color:var(--purple);border:1px solid rgba(167,139,250,.3);font-size:12px" onclick="go('clients');setTimeout(()=>{_clientActiveTab='prospect';switchClientTab('prospect');},100)">Voir tous →</button>
+    </div>
+    <div class="prospect-kanban" id="dash-prospect-kanban"><div class="kanban-col">
+          <div class="kanban-col-hd" style="background:rgba(167,139,250,.1)">
+            <span>🌱 Nouveau lead</span>
+            <span style="font-size:13px;font-weight:700">2</span>
+          </div>
+          
+            <div class="kanban-card" onclick="openProspectModal(30)">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+                <div style="width:28px;height:28px;border-radius:6px;background:#00c8ff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#000;flex-shrink:0">CT</div>
+                <div class="kanban-card-name">LUMEN TECHNOLOGIES</div>
+              </div>
+              <div class="kanban-card-sector">💻 Technologie</div>
+              
+              
+            </div>
+            <div class="kanban-card" onclick="openProspectModal(31)">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+                <div style="width:28px;height:28px;border-radius:6px;background:#00c8ff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#000;flex-shrink:0">C</div>
+                <div class="kanban-card-name">SAVANE DISTRIBUTION</div>
+              </div>
+              <div class="kanban-card-sector">🛒 Commerce</div>
+              
+              
+            </div>
+        </div><div class="kanban-col">
+          <div class="kanban-col-hd" style="background:rgba(0,200,255,.1)">
+            <span>📞 Contacté</span>
+            <span style="font-size:13px;font-weight:700">2</span>
+          </div>
+          
+            <div class="kanban-card" onclick="openProspectModal(18)">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+                <div style="width:28px;height:28px;border-radius:6px;background:#ffdd00;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#000;flex-shrink:0">MC</div>
+                <div class="kanban-card-name">NOVATECH GROUP</div>
+              </div>
+              <div class="kanban-card-sector">🛒 Commerce</div>
+              
+              <div style="font-size:10px;color:var(--text-muted);margin-top:4px">💬 1 obs.</div>
+            </div>
+            <div class="kanban-card" onclick="openProspectModal(25)">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+                <div style="width:28px;height:28px;border-radius:6px;background:#800000;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#000;flex-shrink:0">S</div>
+                <div class="kanban-card-name">BRIGHTFOOD SA</div>
+              </div>
+              <div class="kanban-card-sector">💻 Technologie</div>
+              
+              <div style="font-size:10px;color:var(--text-muted);margin-top:4px">💬 1 obs.</div>
+            </div>
+        </div><div class="kanban-col">
+          <div class="kanban-col-hd" style="background:rgba(255,171,0,.1)">
+            <span>📄 Proposition envoyée</span>
+            <span style="font-size:13px;font-weight:700">2</span>
+          </div>
+          
+            <div class="kanban-card" onclick="openProspectModal(23)">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+                <div style="width:28px;height:28px;border-radius:6px;background:#002833;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#000;flex-shrink:0">N</div>
+                <div class="kanban-card-name">NORDIC POWER CO</div>
+              </div>
+              <div class="kanban-card-sector">🏭 Industrie</div>
+              
+              <div style="font-size:10px;color:var(--text-muted);margin-top:4px">💬 1 obs.</div>
+            </div>
+            <div class="kanban-card" onclick="openProspectModal(24)">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+                <div style="width:28px;height:28px;border-radius:6px;background:#3e00b3;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#000;flex-shrink:0">SA</div>
+                <div class="kanban-card-name">ATLAS ASSURANCES</div>
+              </div>
+              <div class="kanban-card-sector">💰 Finance</div>
+              
+              <div style="font-size:10px;color:var(--text-muted);margin-top:4px">💬 1 obs.</div>
+            </div>
+        </div><div class="kanban-col">
+          <div class="kanban-col-hd" style="background:rgba(255,107,43,.1)">
+            <span>🤝 En négociation</span>
+            <span style="font-size:13px;font-weight:700">2</span>
+          </div>
+          
+            <div class="kanban-card" onclick="openProspectModal(13)">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+                <div style="width:28px;height:28px;border-radius:6px;background:#1e00ff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#000;flex-shrink:0">I</div>
+                <div class="kanban-card-name">iCONNEKT</div>
+              </div>
+              <div class="kanban-card-sector">💻 Technologie</div>
+              
+              <div style="font-size:10px;color:var(--text-muted);margin-top:4px">💬 1 obs.</div>
+            </div>
+            <div class="kanban-card" onclick="openProspectModal(20)">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+                <div style="width:28px;height:28px;border-radius:6px;background:#0b2d51;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#000;flex-shrink:0">OP</div>
+                <div class="kanban-card-name">CEDAR PROPERTIES</div>
+              </div>
+              <div class="kanban-card-sector">🏢 Immobilier</div>
+              
+              <div style="font-size:10px;color:var(--text-muted);margin-top:4px">💬 1 obs.</div>
+            </div>
+        </div><div class="kanban-col">
+          <div class="kanban-col-hd" style="background:rgba(255,61,90,.1)">
+            <span>❌ Perdu</span>
+            <span style="font-size:13px;font-weight:700">0</span>
+          </div>
+          
+        </div></div>
+
+    <!-- ═══ SECTION CLIENTS ═══ -->
+    <div class="dash-section-hd"><div class="dash-section-title">📂 Appels d'offre <span class="dash-section-count" style="color:#60a5fa" id="dash-appeloffre-count">1</span></div><button class="btn" style="background:rgba(96,165,250,.12);color:#60a5fa;border:1px solid rgba(96,165,250,.3);font-size:12px" onclick="go('clients');setTimeout(()=>{_clientActiveTab='appeloffre';switchClientTab('appeloffre');},100)">Voir tous →</button></div><div id="dash-appeloffre-list" class="appeloffre-list"></div><div class="dash-section-hd">
+      <div class="dash-section-title">✅ Clients actifs <span class="dash-section-count" style="color:var(--green)" id="dash-client-count">11</span></div>
+      <button class="btn" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(0,229,160,.3);font-size:12px" onclick="go('clients');setTimeout(()=>{document.getElementById('cf-type').value='client';renderClients();},100)">Voir tous →</button>
+    </div>
+    <div class="client-list-grid" id="dash-client-grid"></div>
+
+    <!-- ═══ ÉQUIPE — PERFORMANCE ═══ -->
+    <div class="dash-section-hd" style="margin-top:28px">
+      <div class="dash-section-title">🏆 Performance de l'équipe</div>
+    </div>
+    <div class="g g2" style="margin-bottom:14px;align-items:start">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">🥇 Top 3 — Personnes les plus engagées</div></div>
+        <div class="podium-wrap" id="dash-podium"><div style="display:flex;align-items:flex-end;justify-content:center;gap:16px;width:100%;padding:20px 0 8px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;max-width:130px">
+          <div style="position:relative;width:48px;height:48px;border-radius:50%;background:hsl(232,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:15px;font-weight:800;color:#000;box-shadow:0 0 0 3px #C0C0C0">
+            JA
+            
+          </div>
+          <div style="font-size:12px;font-weight:700;text-align:center;line-height:1.3">Jean AHOURE</div>
+          <div style="font-family:var(--mono);font-size:10.5px;color:var(--text-muted)">9/11 tâches · score 36</div>
+          <div style="width:100%;height:70px;border-radius:6px 6px 0 0;background:#C0C0C066;border:2px solid #C0C0C0;display:flex;align-items:center;justify-content:center">
+            <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:#C0C0C0">#2</span>
+          </div>
+        </div><div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;max-width:130px">
+          <div style="position:relative;width:48px;height:48px;border-radius:50%;background:hsl(45,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:15px;font-weight:800;color:#000;box-shadow:0 0 0 3px #FFD700">
+            SB
+            <div style="position:absolute;top:-16px;font-size:20px;left:50%;transform:translateX(-50%)">🥇</div>
+          </div>
+          <div style="font-size:12px;font-weight:700;text-align:center;line-height:1.3">Sandrine BLEDOU</div>
+          <div style="font-family:var(--mono);font-size:10.5px;color:var(--text-muted)">16/19 tâches · score 67</div>
+          <div style="width:100%;height:100px;border-radius:6px 6px 0 0;background:#FFD70066;border:2px solid #FFD700;display:flex;align-items:center;justify-content:center">
+            <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:#FFD700">#1</span>
+          </div>
+        </div><div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;max-width:130px">
+          <div style="position:relative;width:48px;height:48px;border-radius:50%;background:hsl(166,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:15px;font-weight:800;color:#000;box-shadow:0 0 0 3px #CD7F32">
+            FD
+            
+          </div>
+          <div style="font-size:12px;font-weight:700;text-align:center;line-height:1.3">Felicia DJAMA</div>
+          <div style="font-family:var(--mono);font-size:10.5px;color:var(--text-muted)">6/10 tâches · score 24</div>
+          <div style="width:100%;height:55px;border-radius:6px 6px 0 0;background:#CD7F3266;border:2px solid #CD7F32;display:flex;align-items:center;justify-content:center">
+            <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:#CD7F32">#3</span>
+          </div>
+        </div>
+    </div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">⚠️ Retards par personne</div></div>
+        <div id="dash-late-members" style="display:flex;flex-direction:column;gap:7px;padding-top:2px"><div class="task-edit-row" style="border-radius:8px;border:1px solid rgba(255,61,90,.2);background:var(--red-dim);flex-wrap:wrap;gap:6px">
+        <div style="width:32px;height:32px;border-radius:50%;background:hsl(166,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:12px;font-weight:800;color:#000;flex-shrink:0">FD</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:700">Felicia DJAMA</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">"Etablissement contrat - Relance du client", "Proposer des jeux pour la fête des mères"</div>
+        </div>
+        <span class="team-late-badge">⚠️ 2 en retard</span>
+      </div><div class="task-edit-row" style="border-radius:8px;border:1px solid rgba(255,61,90,.2);background:var(--red-dim);flex-wrap:wrap;gap:6px">
+        <div style="width:32px;height:32px;border-radius:50%;background:hsl(132,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:12px;font-weight:800;color:#000;flex-shrink:0">CB</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:700">Cyrille BABO</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">"Uploader les 50 épisodes"</div>
+        </div>
+        <span class="team-late-badge">⚠️ 1 en retard</span>
+      </div><div class="task-edit-row" style="border-radius:8px;border:1px solid rgba(255,61,90,.2);background:var(--red-dim);flex-wrap:wrap;gap:6px">
+        <div style="width:32px;height:32px;border-radius:50%;background:hsl(232,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:12px;font-weight:800;color:#000;flex-shrink:0">JA</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:700">Jean AHOURE</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">"Rajouter les dernier élements de l'offre technique"</div>
+        </div>
+        <span class="team-late-badge">⚠️ 1 en retard</span>
+      </div><div class="task-edit-row" style="border-radius:8px;border:1px solid rgba(255,61,90,.2);background:var(--red-dim);flex-wrap:wrap;gap:6px">
+        <div style="width:32px;height:32px;border-radius:50%;background:hsl(271,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:12px;font-weight:800;color:#000;flex-shrink:0">NK</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:700">Noe KARAMOKO</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">"Concevoir le film à partir du script transmis ( Film monté avec IA )"</div>
+        </div>
+        <span class="team-late-badge">⚠️ 1 en retard</span>
+      </div><div class="task-edit-row" style="border-radius:8px;border:1px solid rgba(255,61,90,.2);background:var(--red-dim);flex-wrap:wrap;gap:6px">
+        <div style="width:32px;height:32px;border-radius:50%;background:hsl(321,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:12px;font-weight:800;color:#000;flex-shrink:0">YA</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:700">Yvon ALECHOU</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">"Proposition du rebranding digital 360 (social media / Website)"</div>
+        </div>
+        <span class="team-late-badge">⚠️ 1 en retard</span>
+      </div></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-hd"><div class="card-title">📊 Efficacité individuelle</div></div>
+      <div class="team-perf-grid" id="dash-team-grid"><div class="team-perf-card">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:hsl(45,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:13px;font-weight:800;color:#000;flex-shrink:0">SB</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Sandrine BLEDOU</div>
+            <div style="font-size:10.5px;color:var(--text-muted)">19 tâches assignées</div>
+          </div>
+          <span class="team-ok-badge">✓ OK</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:3px"><span>Complétion</span><span style="font-family:var(--mono);font-weight:700;color:var(--green)">84%</span></div>
+          <div class="pbar" style="height:6px"><div class="pfill" style="width:84%;background:hsl(45,60%,55%)"></div></div>
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:4px">16 terminées · 88h réalisées</div>
+        </div>
+      </div><div class="team-perf-card">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:hsl(232,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:13px;font-weight:800;color:#000;flex-shrink:0">JA</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Jean AHOURE</div>
+            <div style="font-size:10.5px;color:var(--text-muted)">11 tâches assignées</div>
+          </div>
+          <span class="team-late-badge">⚠️ 1</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:3px"><span>Complétion</span><span style="font-family:var(--mono);font-weight:700;color:var(--green)">82%</span></div>
+          <div class="pbar" style="height:6px"><div class="pfill" style="width:82%;background:hsl(232,60%,55%)"></div></div>
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:4px">9 terminées · 200h réalisées</div>
+        </div>
+      </div><div class="team-perf-card">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:hsl(166,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:13px;font-weight:800;color:#000;flex-shrink:0">FD</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Felicia DJAMA</div>
+            <div style="font-size:10.5px;color:var(--text-muted)">10 tâches assignées</div>
+          </div>
+          <span class="team-late-badge">⚠️ 2</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:3px"><span>Complétion</span><span style="font-family:var(--mono);font-weight:700;color:var(--accent)">60%</span></div>
+          <div class="pbar" style="height:6px"><div class="pfill" style="width:60%;background:hsl(166,60%,55%)"></div></div>
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:4px">6 terminées · 53h réalisées</div>
+        </div>
+      </div><div class="team-perf-card">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:hsl(321,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:13px;font-weight:800;color:#000;flex-shrink:0">YA</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Yvon ALECHOU</div>
+            <div style="font-size:10.5px;color:var(--text-muted)">7 tâches assignées</div>
+          </div>
+          <span class="team-late-badge">⚠️ 1</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:3px"><span>Complétion</span><span style="font-family:var(--mono);font-weight:700;color:var(--amber)">14%</span></div>
+          <div class="pbar" style="height:6px"><div class="pfill" style="width:14%;background:hsl(321,60%,55%)"></div></div>
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:4px">1 terminée · 0h réalisées</div>
+        </div>
+      </div><div class="team-perf-card">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:hsl(132,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:13px;font-weight:800;color:#000;flex-shrink:0">CB</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Cyrille BABO</div>
+            <div style="font-size:10.5px;color:var(--text-muted)">5 tâches assignées</div>
+          </div>
+          <span class="team-late-badge">⚠️ 1</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:3px"><span>Complétion</span><span style="font-family:var(--mono);font-weight:700;color:var(--accent)">60%</span></div>
+          <div class="pbar" style="height:6px"><div class="pfill" style="width:60%;background:hsl(132,60%,55%)"></div></div>
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:4px">3 terminées · 4h réalisées</div>
+        </div>
+      </div><div class="team-perf-card">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:hsl(279,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:13px;font-weight:800;color:#000;flex-shrink:0">EY</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Evelyne YAO</div>
+            <div style="font-size:10.5px;color:var(--text-muted)">3 tâches assignées</div>
+          </div>
+          <span class="team-ok-badge">✓ OK</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:3px"><span>Complétion</span><span style="font-family:var(--mono);font-weight:700;color:var(--accent)">67%</span></div>
+          <div class="pbar" style="height:6px"><div class="pfill" style="width:67%;background:hsl(279,60%,55%)"></div></div>
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:4px">2 terminées · 0h réalisées</div>
+        </div>
+      </div><div class="team-perf-card">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:hsl(5,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:13px;font-weight:800;color:#000;flex-shrink:0">EK</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Eva KOFFI</div>
+            <div style="font-size:10.5px;color:var(--text-muted)">2 tâches assignées</div>
+          </div>
+          <span class="team-ok-badge">✓ OK</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:3px"><span>Complétion</span><span style="font-family:var(--mono);font-weight:700;color:var(--accent)">50%</span></div>
+          <div class="pbar" style="height:6px"><div class="pfill" style="width:50%;background:hsl(5,60%,55%)"></div></div>
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:4px">1 terminée · 0h réalisées</div>
+        </div>
+      </div><div class="team-perf-card">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:hsl(271,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:13px;font-weight:800;color:#000;flex-shrink:0">NK</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Noe KARAMOKO</div>
+            <div style="font-size:10.5px;color:var(--text-muted)">1 tâche assignée</div>
+          </div>
+          <span class="team-late-badge">⚠️ 1</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:3px"><span>Complétion</span><span style="font-family:var(--mono);font-weight:700;color:var(--amber)">0%</span></div>
+          <div class="pbar" style="height:6px"><div class="pfill" style="width:0%;background:hsl(271,60%,55%)"></div></div>
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:4px">0 terminée · 0h réalisées</div>
+        </div>
+      </div><div class="team-perf-card">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:hsl(151,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:13px;font-weight:800;color:#000;flex-shrink:0">OM</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Othniel MBAHIA</div>
+            <div style="font-size:10.5px;color:var(--text-muted)">1 tâche assignée</div>
+          </div>
+          <span class="team-ok-badge">✓ OK</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:3px"><span>Complétion</span><span style="font-family:var(--mono);font-weight:700;color:var(--green)">100%</span></div>
+          <div class="pbar" style="height:6px"><div class="pfill" style="width:100%;background:hsl(151,60%,55%)"></div></div>
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:4px">1 terminée · 0h réalisées</div>
+        </div>
+      </div><div class="team-perf-card">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:hsl(350,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:13px;font-weight:800;color:#000;flex-shrink:0">FD</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Fabien DALIGOU</div>
+            <div style="font-size:10.5px;color:var(--text-muted)">1 tâche assignée</div>
+          </div>
+          <span class="team-ok-badge">✓ OK</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:3px"><span>Complétion</span><span style="font-family:var(--mono);font-weight:700;color:var(--green)">100%</span></div>
+          <div class="pbar" style="height:6px"><div class="pfill" style="width:100%;background:hsl(350,60%,55%)"></div></div>
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:4px">1 terminée · 40h réalisées</div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- ═══ PROSPECTS — APPORTEURS ═══ -->
+    <div class="dash-section-hd" style="margin-top:10px">
+      <div class="dash-section-title">🎯 Apporteurs de prospects &amp; Implication globale</div>
+    </div>
+    <div class="g g2" style="margin-bottom:20px;align-items:start">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">📈 Qui rapporte le plus de prospects ?</div></div>
+        <div id="dash-referral-chart" style="display:flex;flex-direction:column;gap:10px;padding-top:4px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <span style="font-size:11px;color:var(--text-muted)">9 prospect(s) au total · 0 non affectés</span>
+    <button class="btn" style="padding:4px 10px;font-size:11px;background:var(--purple-dim);color:var(--purple);border:1px solid rgba(167,139,250,.3)" onclick="openAssignReferralModal()">+ Affecter un prospect</button>
+  </div>
+      <div style="margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="toggleRefRow('ref-row-Nadège_KOUMA_Epse_HUART')">
+          <div style="width:32px;height:32px;border-radius:50%;background:hsl(233,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:12px;font-weight:800;color:#000;flex-shrink:0">NK</div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:13px;font-weight:700">Nadège KOUMA Epse HUART</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--purple)">5 prospects</span>
+                <span style="font-size:15px">🥇</span>
+                <span style="font-size:11px;color:var(--text-muted);transform:rotate(0deg);transition:.2s" id="arr-ref-row-Nadège_KOUMA_Epse_HUART">▾</span>
+              </div>
+            </div>
+            <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden">
+              <div class="referral-chart-bar" style="width:100%;height:100%"></div>
+            </div>
+          </div>
+        </div>
+        <div id="ref-row-Nadège_KOUMA_Epse_HUART" style="display:none;margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+          
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border3,var(--border))">
+              <div style="width:26px;height:26px;border-radius:6px;background:#1e00ff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:#000;flex-shrink:0">I</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">iCONNEKT</div>
+                <div style="font-size:10.5px;color:var(--text-muted)"><span class="pipe-stage-badge ps-negociation">🤝 En négociation</span></div>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px" onclick="openProspectQuickEdit(13)">✏️ Modifier</button>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px;color:var(--purple)" onclick="openChangeReferralModal(13)">↔ Réaffecter</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border3,var(--border))">
+              <div style="width:26px;height:26px;border-radius:6px;background:#0b2d51;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:#000;flex-shrink:0">OP</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">CEDAR PROPERTIES</div>
+                <div style="font-size:10.5px;color:var(--text-muted)"><span class="pipe-stage-badge ps-negociation">🤝 En négociation</span></div>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px" onclick="openProspectQuickEdit(20)">✏️ Modifier</button>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px;color:var(--purple)" onclick="openChangeReferralModal(20)">↔ Réaffecter</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border3,var(--border))">
+              <div style="width:26px;height:26px;border-radius:6px;background:#800000;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:#000;flex-shrink:0">S</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">BRIGHTFOOD SA</div>
+                <div style="font-size:10.5px;color:var(--text-muted)"><span class="pipe-stage-badge ps-contacted">📞 Contacté</span></div>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px" onclick="openProspectQuickEdit(25)">✏️ Modifier</button>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px;color:var(--purple)" onclick="openChangeReferralModal(25)">↔ Réaffecter</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border3,var(--border))">
+              <div style="width:26px;height:26px;border-radius:6px;background:#00c8ff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:#000;flex-shrink:0">CT</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">LUMEN TECHNOLOGIES</div>
+                <div style="font-size:10.5px;color:var(--text-muted)"><span class="pipe-stage-badge ps-lead">🌱 Nouveau lead</span></div>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px" onclick="openProspectQuickEdit(30)">✏️ Modifier</button>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px;color:var(--purple)" onclick="openChangeReferralModal(30)">↔ Réaffecter</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border3,var(--border))">
+              <div style="width:26px;height:26px;border-radius:6px;background:#00c8ff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:#000;flex-shrink:0">C</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">SAVANE DISTRIBUTION</div>
+                <div style="font-size:10.5px;color:var(--text-muted)"><span class="pipe-stage-badge ps-lead">🌱 Nouveau lead</span></div>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px" onclick="openProspectQuickEdit(31)">✏️ Modifier</button>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px;color:var(--purple)" onclick="openChangeReferralModal(31)">↔ Réaffecter</button>
+            </div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="toggleRefRow('ref-row-Jean_AHOURE')">
+          <div style="width:32px;height:32px;border-radius:50%;background:hsl(232,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:12px;font-weight:800;color:#000;flex-shrink:0">JA</div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:13px;font-weight:700">Jean AHOURE</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--purple)">4 prospects</span>
+                <span style="font-size:15px">🥈</span>
+                <span style="font-size:11px;color:var(--text-muted);transform:rotate(0deg);transition:.2s" id="arr-ref-row-Jean_AHOURE">▾</span>
+              </div>
+            </div>
+            <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden">
+              <div class="referral-chart-bar" style="width:80%;height:100%"></div>
+            </div>
+          </div>
+        </div>
+        <div id="ref-row-Jean_AHOURE" style="display:none;margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+          
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border3,var(--border))">
+              <div style="width:26px;height:26px;border-radius:6px;background:#ffdd00;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:#000;flex-shrink:0">MC</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">NOVATECH GROUP</div>
+                <div style="font-size:10.5px;color:var(--text-muted)"><span class="pipe-stage-badge ps-contacted">📞 Contacté</span></div>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px" onclick="openProspectQuickEdit(18)">✏️ Modifier</button>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px;color:var(--purple)" onclick="openChangeReferralModal(18)">↔ Réaffecter</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border3,var(--border))">
+              <div style="width:26px;height:26px;border-radius:6px;background:#002833;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:#000;flex-shrink:0">N</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">NORDIC POWER CO</div>
+                <div style="font-size:10.5px;color:var(--text-muted)"><span class="pipe-stage-badge ps-proposal">📄 Proposition envoyée</span></div>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px" onclick="openProspectQuickEdit(23)">✏️ Modifier</button>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px;color:var(--purple)" onclick="openChangeReferralModal(23)">↔ Réaffecter</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border3,var(--border))">
+              <div style="width:26px;height:26px;border-radius:6px;background:#3e00b3;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:#000;flex-shrink:0">SA</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">ATLAS ASSURANCES</div>
+                <div style="font-size:10.5px;color:var(--text-muted)"><span class="pipe-stage-badge ps-proposal">📄 Proposition envoyée</span></div>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px" onclick="openProspectQuickEdit(24)">✏️ Modifier</button>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px;color:var(--purple)" onclick="openChangeReferralModal(24)">↔ Réaffecter</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border3,var(--border))">
+              <div style="width:26px;height:26px;border-radius:6px;background:#ff0026;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:#000;flex-shrink:0">F&amp;</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">FOCUS &amp; FAITS DIVERS</div>
+                <div style="font-size:10.5px;color:var(--text-muted)"><span class="pipe-stage-badge ps-lead">🌱 Nouveau lead</span></div>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px" onclick="openProspectQuickEdit(29)">✏️ Modifier</button>
+              <button class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:11px;color:var(--purple)" onclick="openChangeReferralModal(29)">↔ Réaffecter</button>
+            </div>
+        </div>
+      </div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">⚡ Implication globale de l'équipe</div></div>
+        <div id="dash-team-involvement" style="display:flex;flex-direction:column;gap:8px;padding-top:4px">
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:28px;height:28px;border-radius:50%;background:hsl(232,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:11px;font-weight:800;color:#000;flex-shrink:0">JA</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:12.5px;font-weight:600">Jean AHOURE</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--accent)">45 pts</span>
+          </div>
+          <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:100%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:3px;transition:width .8s ease"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:28px;height:28px;border-radius:50%;background:hsl(45,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:11px;font-weight:800;color:#000;flex-shrink:0">SB</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:12.5px;font-weight:600">Sandrine BLEDOU</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--accent)">43 pts</span>
+          </div>
+          <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:96%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:3px;transition:width .8s ease"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:28px;height:28px;border-radius:50%;background:hsl(166,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:11px;font-weight:800;color:#000;flex-shrink:0">FD</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:12.5px;font-weight:600">Felicia DJAMA</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--accent)">26 pts</span>
+          </div>
+          <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:58%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:3px;transition:width .8s ease"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:28px;height:28px;border-radius:50%;background:hsl(233,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:11px;font-weight:800;color:#000;flex-shrink:0">NK</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:12.5px;font-weight:600">Nadège KOUMA Epse HUART</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--accent)">18 pts</span>
+          </div>
+          <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:40%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:3px;transition:width .8s ease"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:28px;height:28px;border-radius:50%;background:hsl(321,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:11px;font-weight:800;color:#000;flex-shrink:0">YA</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:12.5px;font-weight:600">Yvon ALECHOU</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--accent)">17 pts</span>
+          </div>
+          <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:38%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:3px;transition:width .8s ease"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:28px;height:28px;border-radius:50%;background:hsl(132,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:11px;font-weight:800;color:#000;flex-shrink:0">CB</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:12.5px;font-weight:600">Cyrille BABO</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--accent)">14 pts</span>
+          </div>
+          <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:31%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:3px;transition:width .8s ease"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:28px;height:28px;border-radius:50%;background:hsl(279,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:11px;font-weight:800;color:#000;flex-shrink:0">EY</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:12.5px;font-weight:600">Evelyne YAO</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--accent)">7 pts</span>
+          </div>
+          <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:16%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:3px;transition:width .8s ease"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:28px;height:28px;border-radius:50%;background:hsl(5,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:11px;font-weight:800;color:#000;flex-shrink:0">EK</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:12.5px;font-weight:600">Eva KOFFI</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--accent)">7 pts</span>
+          </div>
+          <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:16%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:3px;transition:width .8s ease"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:28px;height:28px;border-radius:50%;background:hsl(151,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:11px;font-weight:800;color:#000;flex-shrink:0">OM</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:12.5px;font-weight:600">Othniel MBAHIA</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--accent)">5 pts</span>
+          </div>
+          <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:11%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:3px;transition:width .8s ease"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:28px;height:28px;border-radius:50%;background:hsl(271,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:11px;font-weight:800;color:#000;flex-shrink:0">NK</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:12.5px;font-weight:600">Noe KARAMOKO</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--accent)">3 pts</span>
+          </div>
+          <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:7%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:3px;transition:width .8s ease"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:28px;height:28px;border-radius:50%;background:hsl(350,60%,55%);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:11px;font-weight:800;color:#000;flex-shrink:0">FD</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:12.5px;font-weight:600">Fabien DALIGOU</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--accent)">2 pts</span>
+          </div>
+          <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:4%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:3px;transition:width .8s ease"></div>
+          </div>
+        </div>
+      </div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ AUJOURD'HUI ═══ -->
+  <div class="view" id="view-today">
+    <div class="card" id="today-synth" style="margin-bottom:18px;padding:20px 22px"></div>
+    <div class="g g3">
+      <div class="tbl-wrap">
+        <div class="tbl-bar"><div class="tbl-ttl">✅ Terminées aujourd'hui</div><span class="task-tab-count" id="today-done-count">0</span></div>
+        <div id="today-done-list" style="padding:6px 0"></div>
+      </div>
+      <div class="tbl-wrap">
+        <div class="tbl-bar"><div class="tbl-ttl">🔵 En cours aujourd'hui</div><span class="task-tab-count" id="today-prog-count">0</span></div>
+        <div id="today-prog-list" style="padding:6px 0"></div>
+      </div>
+      <div class="tbl-wrap">
+        <div class="tbl-bar"><div class="tbl-ttl">🟡 À suivre</div><span class="task-tab-count" id="today-follow-count">0</span></div>
+        <div id="today-follow-list" style="padding:6px 0"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SECTORS ═══ -->
+  <div class="view" id="view-sectors">
+    <div style="margin-bottom:20px;display:flex;gap:14px;flex-wrap:wrap">
+      <div class="card" style="flex:1;min-width:180px;text-align:center">
+        <div style="font-size:26px;margin-bottom:6px">🎨</div>
+        <div style="font-family:var(--head);font-size:14px;font-weight:700;margin-bottom:3px">Créatif</div>
+        <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--pink)" id="sv-creative">2</div>
+        <div style="font-size:11px;color:var(--text-muted)">clients avec besoin créatif</div>
+      </div>
+      <div class="card" style="flex:1;min-width:180px;text-align:center">
+        <div style="font-size:26px;margin-bottom:6px">💡</div>
+        <div style="font-family:var(--head);font-size:14px;font-weight:700;margin-bottom:3px">Conseil</div>
+        <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--purple)" id="sv-conseil">5</div>
+        <div style="font-size:11px;color:var(--text-muted)">clients avec besoin conseil</div>
+      </div>
+      <div class="card" style="flex:1;min-width:180px;text-align:center">
+        <div style="font-size:26px;margin-bottom:6px">💻</div>
+        <div style="font-family:var(--head);font-size:14px;font-weight:700;margin-bottom:3px">Digital</div>
+        <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent)" id="sv-digital">15</div>
+        <div style="font-size:11px;color:var(--text-muted)">clients avec besoin digital</div>
+      </div>
+    </div>
+    <div class="g g2" style="margin-bottom:14px">
+      <div class="card"><div class="card-hd"><div class="card-title">Besoins par secteur</div></div><canvas id="ch-sector-needs" style="max-height: 200px; display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0" height="0"></canvas><div class="chart-icon-anim" style="animation-delay: 0.6s;">🎨</div></div>
+      <div class="card"><div class="card-hd"><div class="card-title">Revenus estimés par secteur</div></div><canvas id="ch-sector-budget" style="max-height: 200px; display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0" height="0"></canvas><div class="chart-icon-anim" style="animation-delay: 0.2s;">💰</div></div>
+    </div>
+    <div class="g-auto g" id="sectors-grid"></div>
+  </div>
+
+  <!-- ═══ CLIENTS ═══ -->
+  <div class="view active" id="view-clients">
+    <!-- ONGLETS Clients / Prospects / Clôturés -->
+    <div style="display:flex;align-items:center;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px" id="client-tabs">
+      <button id="ctab-client" onclick="switchClientTab('client')" style="padding: 10px 20px; font-size: 13px; font-weight: 700; cursor: pointer; border-top-width: medium; border-right-width: medium; border-left-width: medium; border-top-style: none; border-right-style: none; border-left-style: none; border-top-color: currentcolor; border-right-color: currentcolor; border-left-color: currentcolor; border-image: initial; border-bottom-width: ; border-bottom-style: ; border-bottom-color: var(--accent); background: transparent; color: var(--accent); margin-bottom: -1px; font-family: var(--body); display: flex; align-items: center; gap: 7px; transition: 0.2s;">
+        ✅ Clients <span id="ctab-count-client" style="font-family: var(--mono); font-size: 11px; padding: 1px 7px; border-radius: 10px; background: var(--accent-dim); color: var(--accent);">11</span>
+      </button>
+      <button id="ctab-prospect" onclick="switchClientTab('prospect')" style="padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; border-width: medium medium 2px; border-style: none none solid; border-color: currentcolor currentcolor transparent; border-image: initial; background: transparent; color: var(--text-muted); margin-bottom: -1px; font-family: var(--body); display: flex; align-items: center; gap: 7px; transition: 0.2s;">
+        🎯 Prospects <span id="ctab-count-prospect" style="font-family: var(--mono); font-size: 11px; padding: 1px 7px; border-radius: 10px; background: var(--surface2); color: var(--text-muted);">7</span>
+      </button>
+      <button id="ctab-appeloffre" onclick="switchClientTab('appeloffre')" style="padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; border-width: medium medium 2px; border-style: none none solid; border-color: currentcolor currentcolor transparent; border-image: none; background: transparent; color: var(--text-muted); margin-bottom: -1px; font-family: var(--body); display: flex; align-items: center; gap: 7px; transition: 0.2s;">📂 Appels d'offre <span id="ctab-count-appeloffre" style="font-family:var(--mono);font-size:11px;padding:1px 7px;border-radius:10px;background:var(--surface2);color:var(--text-muted)">1</span></button><button id="ctab-cloture" onclick="switchClientTab('cloture')" style="padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text-muted);margin-bottom:-1px;font-family:var(--body);display:flex;align-items:center;gap:7px;transition:all .2s">
+        🔒 Clôturés <span id="ctab-count-cloture" style="font-family: var(--mono); font-size: 11px; padding: 1px 7px; border-radius: 10px; background: var(--surface2); color: var(--text-muted);">2</span>
+      </button>
+      <div style="flex:1"></div>
+      <button id="btn-new-client" class="btn btn-primary btn-sm" onclick="openModal('client')" style="display: inline-flex;">+ Nouveau client</button>
+      <button id="btn-new-prospect" class="btn btn-sm" style="background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(167, 139, 250, 0.3); display: none; margin-left: 6px;" onclick="openModal('prospect')">+ Nouveau prospect</button>
+    </div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap" id="client-filters">
+      <select class="flt" id="cf-type" onchange="renderClients()" style="display:none">
+        <option value="all" selected="selected">Tous (clients + prospects)</option>
+        <option value="client">✅ Clients uniquement</option>
+        <option value="prospect">🎯 Prospects uniquement</option>
+      </select>
+      <select class="flt" id="cf-sector" onchange="renderClients()"><option value="all" selected="selected">Tous les secteurs</option><option value="Commerce">Commerce</option><option value="Finance">Finance</option><option value="Immobilier">Immobilier</option><option value="Industrie">Industrie</option><option value="Médias &amp; Com.">Médias &amp; Com.</option><option value="Technologie">Technologie</option><option value="Éducation">Éducation</option></select>
+      <select class="flt" id="cf-need" onchange="renderClients()"><option value="all" selected="selected">Tous les besoins</option><option value="creative">Créatif</option><option value="conseil">Conseil</option><option value="digital">Digital</option></select>
+      <button class="btn btn-primary" onclick="openModal('client')" style="margin-left:auto">+ Nouveau client</button>
+      <button class="btn" style="background:var(--purple-dim);color:var(--purple);border:1px solid rgba(167,139,250,.3)" onclick="openModal('prospect')">+ Nouveau prospect</button>
+    </div>
+    <div class="g g-auto" id="clients-grid"></div>
+  </div>
+
+  <!-- ═══ PROJECTS ═══ -->
+  <div class="view" id="view-projects">
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <select class="flt" id="pf-client" onchange="renderProjects()"></select>
+      <select class="flt" id="pf-status" onchange="renderProjects()"><option value="all" selected="selected">Tous statuts</option><option>En cours</option><option>Terminé</option><option>Non démarré</option></select>
+      <select class="flt" id="pf-priority" onchange="renderProjects()"><option value="all" selected="selected">Toutes priorités</option><option>Urgente</option><option>Haute</option><option>Moyenne</option><option>Faible</option></select>
+      <button class="btn btn-primary" onclick="openModal('project')" style="margin-left:auto">+ Nouveau projet</button>
+    </div>
+    <div class="tbl-wrap">
+      <table><thead><tr><th>Projet</th><th>Client</th><th>Secteur</th><th>Statut</th><th>Priorité</th><th>Complétion</th><th>Tâches</th><th>Delta temps</th><th>Actions</th></tr></thead>
+      <tbody id="proj-tbody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- ═══ TASKS ═══ -->
+  <div class="view" id="view-tasks">
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <select class="flt" id="tf-client" onchange="onTaskClientChange()"></select>
+      <select class="flt" id="tf-project" onchange="renderTasks()"></select>
+      <button class="btn btn-primary" onclick="openModal('task')" style="margin-left:auto">+ Nouvelle tâche</button>
+    </div>
+    <div class="tbl-wrap">
+      <div class="task-tabs">
+        <div class="task-tab active" id="tab-active" onclick="switchTaskTab('active')">⚡ Actives<span class="task-tab-count" id="tc-active">12</span></div>
+        <div class="task-tab" id="tab-done" onclick="switchTaskTab('done')">✅ Terminées<span class="task-tab-count" id="tc-done">61</span></div>
+      </div>
+      <table><thead>
+        <tr><th>Tâche</th><th>Client</th><th>Projet</th><th>Statut</th><th>Début</th><th>Fin</th><th>Estimé</th><th>Réel</th><th>Delta</th><th>Actions</th></tr>
+      </thead><tbody id="tasks-tbody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- ═══ REPORTS ═══ -->
+  <div class="view" id="view-reports">
+    <div class="g g4" style="margin-bottom:18px">
+      <div class="kpi" style="--kpi-c:var(--accent)"><div class="kpi-icon">🏆</div><div class="kpi-val" id="r-score">65</div><div class="kpi-lbl">Score d'efficacité</div></div>
+      <div class="kpi" style="--kpi-c:var(--green)"><div class="kpi-icon">⏱</div><div class="kpi-val" id="r-ontime">100%</div><div class="kpi-lbl">Tâches dans les temps</div></div>
+      <div class="kpi" style="--kpi-c:var(--amber)"><div class="kpi-icon">⌛</div><div class="kpi-val" id="r-avg">32.8h</div><div class="kpi-lbl">Moy. heures / tâche</div></div>
+      <div class="kpi" style="--kpi-c:var(--purple)"><div class="kpi-icon">📐</div><div class="kpi-val" id="r-hours">413h</div><div class="kpi-lbl">Total heures estimées</div></div>
+    </div>
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-hd">
+        <div class="card-title">📅 Filtrer par période</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="setRptPeriod('week')">Cette semaine</button>
+          <button class="btn btn-ghost btn-sm" onclick="setRptPeriod('month')">Ce mois</button>
+          <button class="btn btn-ghost btn-sm" onclick="setRptPeriod('quarter')">Trimestre</button>
+          <button class="btn btn-ghost btn-sm" onclick="setRptPeriod('year')">Année</button>
+          <button class="btn btn-ghost btn-sm" onclick="setRptPeriod('all')">Tout</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-top:10px">
+        <div class="fg" style="margin:0;flex:1;min-width:140px"><label class="flbl">Début</label><input class="fin" type="date" id="rpt-date-from" onchange="renderFilteredReport()"></div>
+        <div class="fg" style="margin:0;flex:1;min-width:140px"><label class="flbl">Fin</label><input class="fin" type="date" id="rpt-date-to" onchange="renderFilteredReport()"></div>
+        <button class="btn btn-primary" onclick="renderFilteredReport()" style="margin-bottom:14px">🔍 Analyser</button>
+      </div>
+      <div id="rpt-period-summary" style="display:flex;align-items:center;gap:7px;margin-top:10px;font-size:12.5px;color:var(--text-muted);padding:8px 12px;background:var(--surface2);border-radius:7px;min-height:36px"></div>
+    </div>
+    <div class="tbl-wrap" style="margin-bottom:18px">
+      <div class="tbl-bar">
+        <div class="tbl-ttl">📋 Tâches <span id="rpt-task-count" style="font-size:11px;color:var(--text-muted);margin-left:6px;font-weight:400"></span></div>
+        <button class="btn btn-ghost btn-sm" onclick="exportFilteredCSV('tasks')">📥 CSV</button>
+      </div>
+      <table><thead><tr><th>Tâche</th><th>Client</th><th>Projet</th><th>Statut</th><th>Début</th><th>Fin</th><th>Assigné</th></tr></thead>
+      <tbody id="rpt-tasks-tbody"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">Sélectionnez une période pour analyser.</td></tr></tbody></table>
+    </div>
+    <div class="tbl-wrap" style="margin-bottom:18px">
+      <div class="tbl-bar">
+        <div class="tbl-ttl">🗂 Projets actifs</div>
+        <button class="btn btn-ghost btn-sm" onclick="exportFilteredCSV('projects')">📥 CSV</button>
+      </div>
+      <table><thead><tr><th>Projet</th><th>Client</th><th>Statut</th><th>Priorité</th><th>Complétion</th><th>Tâches</th></tr></thead>
+      <tbody id="rpt-projs-tbody"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">Sélectionnez une période pour analyser.</td></tr></tbody></table>
+    </div>
+    <div class="g g2" style="margin-bottom:18px">
+      <div class="card"><div class="card-hd"><div class="card-title">⚖️ Charge de travail</div></div><canvas id="ch-workload" style="max-height:220px"></canvas><div class="chart-icon-anim" style="animation-delay: 1.2s;">⚖️</div></div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">📊 Projets — toutes périodes</div></div>
+        <div style="overflow-x:auto"><table id="r-proj-table"><thead><tr><th>Projet</th><th>Client</th><th>Secteur</th><th>Complétion</th><th>Estimé</th><th>Réel</th><th>Delta</th><th>Score</th></tr></thead>
+        <tbody id="r-proj-tbody"></tbody></table></div>
+      </div>
+    </div>
+    <div class="g g2" style="margin-bottom:18px">
+      <div class="card"><div class="card-hd"><div class="card-title">Score global</div></div><div style="font-family:var(--mono);font-size:48px;font-weight:800;text-align:center;padding:20px;color:var(--accent)" id="r-score-big">65/100</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ TODO ═══ -->
+  <div class="view" id="view-todo">
+    <div class="g g2" style="align-items:start">
+      <div>
+        <div class="todo-box">
+          <div class="todo-hd">
+            <input class="todo-in" id="todo-in" placeholder="Ajouter une action rapide..." onkeydown="if(event.key==='Enter')addTodo()">
+            <button class="btn btn-primary" onclick="addTodo()">+</button>
+          </div>
+          <div class="todo-list" id="todo-list"><div class="empty"><div class="empty-ico">🎯</div><div class="empty-txt">Ajoutez votre première action !</div></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Statistiques journalières</div></div>
+        <div id="todo-stats" style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px">
+    <div class="mstat"><span>📋</span><span class="mstat-lbl">Total</span><span class="mstat-val">0</span></div>
+    <div class="mstat"><span>✅</span><span class="mstat-lbl">Terminées</span><span class="mstat-val" style="color:var(--green)">0</span></div>
+    <div class="mstat"><span>⏳</span><span class="mstat-lbl">En attente</span><span class="mstat-val" style="color:var(--amber)">0</span></div>
+    <div style="margin-top:4px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:5px"><span>Progression journalière</span><span style="font-family:var(--mono);font-weight:700;color:var(--accent)">0%</span></div><div class="pbar" style="height:7px"><div class="pfill" style="width:0%"></div></div></div></div>
+        <canvas id="ch-todo" style="max-height: 170px; box-sizing: border-box; display: block; height: 170px; width: 454px;" width="682" height="255"></canvas>
+      <div class="chart-icon-anim" style="animation-delay: 0.2s;">✅</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ ÉQUIPE ═══ -->
+  <div class="view" id="view-team">
+    <!-- KPI strip -->
+    <div class="g g4" style="margin-bottom:14px" id="team-kpis">
+      <div class="fin-kpi" style="--fk-c:var(--accent)"><div style="font-size:15px;margin-bottom:5px">🧑‍💼</div><div class="fin-kpi-val" id="tk-total" style="color:var(--accent)">13</div><div class="fin-kpi-lbl">Membres d'équipe</div></div>
+      <div class="fin-kpi" style="--fk-c:var(--purple)"><div style="font-size:15px;margin-bottom:5px">🎯</div><div class="fin-kpi-val" id="tk-apporteurs" style="color:var(--purple)">2</div><div class="fin-kpi-lbl">Apporteurs de prospects</div></div>
+      <div class="fin-kpi" style="--fk-c:var(--green)"><div style="font-size:15px;margin-bottom:5px">📋</div><div class="fin-kpi-val" id="tk-assigned" style="color:var(--green)">59</div><div class="fin-kpi-lbl">Tâches assignées</div></div>
+      <div class="fin-kpi" style="--fk-c:var(--red)"><div style="font-size:15px;margin-bottom:5px">⚠️</div><div class="fin-kpi-val" id="tk-late" style="color:var(--red)">6</div><div class="fin-kpi-lbl">Actions en retard</div></div>
+    </div>
+    <!-- Filters + Add -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+      <select class="flt" id="team-filter-role" onchange="renderTeam()">
+        <option value="all" selected="selected">Tous les rôles</option>
+      <option value="Community Manager">Community Manager</option><option value="Chargé(e) de communication">Chargé(e) de communication</option><option value="Graphiste / Créatif">Graphiste / Créatif</option><option value="Directeur Artistique">Directeur Artistique</option><option value="Consultant(e) Digital">Consultant(e) Digital</option><option value="Chef de projet">Chef de projet</option><option value="Account Manager">Account Manager</option><option value="Développeur(se)">Développeur(se)</option><option value="Copywriter">Copywriter</option><option value="Chef(fe) d'équipe">Chef(fe) d'équipe</option><option value="Autre">Autre</option></select>
+      <button class="btn btn-primary" onclick="openTeamMemberModal()" style="margin-left:auto">+ Nouveau membre</button>
+    </div>
+    <!-- Team grid -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px" id="team-grid"></div>
+  </div>
+
+  <div id="view-suivi" class="view">
+  <!-- Filters + Tab switcher -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <label style="font-size:11.5px;color:var(--text-muted);font-weight:600">Du</label>
+      <input type="date" id="sv-date-from" class="flt" onchange="renderSuivi()">
+      <label style="font-size:11.5px;color:var(--text-muted);font-weight:600">au</label>
+      <input type="date" id="sv-date-to" class="flt" onchange="renderSuivi()">
+      <select id="sv-client" class="flt" onchange="renderSuivi()"></select>
+      <button class="btn btn-ghost btn-sm" onclick="resetSuiviFilter()">↺ Reset</button>
+    </div>
+    <div style="display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden">
+      <button id="sv-tab-table" class="gran-btn" onclick="setSuiviTab('table')">📋 Tableau</button>
+      <button id="sv-tab-clients" class="gran-btn" onclick="setSuiviTab('clients')">👥 Par client</button>
+      <button id="sv-tab-chart" class="gran-btn active" onclick="setSuiviTab('chart')">📊 Évolution</button>
+    </div>
+  </div>
+
+  <!-- KPI strip -->
+  <div class="g g4" id="sv-kpis" style="margin-bottom:18px">
+    <div class="kpi" style="--kpi-c:var(--green)">
+      <div class="kpi-icon">✅</div>
+      <div class="kpi-val" style="color:var(--green)">4</div>
+      <div class="kpi-lbl">Tâches terminées</div>
+    </div>
+    <div class="kpi" style="--kpi-c:var(--accent)">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-val" style="color:var(--accent)">4</div>
+      <div class="kpi-lbl">Clients servis</div>
+    </div>
+    <div class="kpi" style="--kpi-c:var(--purple)">
+      <div class="kpi-icon">⏱</div>
+      <div class="kpi-val" style="color:var(--purple)">21h</div>
+      <div class="kpi-lbl">Heures réalisées</div>
+    </div>
+    <div class="kpi" style="--kpi-c:var(--amber)">
+      <div class="kpi-icon">🎯</div>
+      <div class="kpi-val" style="color:var(--amber)">0%</div>
+      <div class="kpi-lbl">Livrées à temps</div>
+    </div>
+  </div>
+
+  <!-- Vue Tableau -->
+  <div id="sv-view-table" style="display: none;">
+    <div class="tbl-wrap">
+      <div class="tbl-bar">
+        <div class="tbl-ttl">📋 Tâches terminées</div>
+        <button class="btn btn-ghost btn-sm" onclick="exportSuiviCSV()">⬇ Exporter CSV</button>
+      </div>
+      <table><thead><tr>
+        <th>Tâche</th><th>Client</th><th>Projet</th>
+        <th>Date terminée</th><th>Assigné</th>
+        <th>H. Est.</th><th>H. Réelles</th><th>Perf.</th>
+      </tr></thead>
+      <tbody id="sv-tbody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- Vue Par client -->
+  <div id="sv-view-clients" style="display: none;">
+    <div class="g g-auto" id="sv-client-grid"></div>
+  </div>
+
+  <!-- Vue Évolution -->
+  <div id="sv-view-chart" style="">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-hd" style="flex-wrap:wrap;gap:8px">
+        <div class="card-title">Tâches terminées par client — Évolution mensuelle</div>
+        <div style="display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden">
+          <button id="sv-chart-bar" class="gran-btn active" onclick="setSuiviChartType('bar')">Barres</button>
+          <button id="sv-chart-line" class="gran-btn" onclick="setSuiviChartType('line')">Ligne</button>
+        </div>
+      </div>
+      <canvas id="sv-chart" style="max-height: 320px; display: block; box-sizing: border-box; height: 320px; width: 950px;" width="1426" height="480"></canvas>
+    </div>
+    <!-- Top clients ranking -->
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🏆 Classement clients — volume période</div></div>
+      <div id="sv-ranking"></div>
+    </div>
+  </div>
+  </div></div><!-- /content -->
+</div></main>
+
+<!-- ══════════ MODALS ══════════ -->
+<div class="overlay" id="main-overlay" role="dialog" aria-modal="true" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-box">
+    <div class="modal-hd"><div class="modal-ttl" id="modal-ttl"></div><span class="modal-x" onclick="closeModal()">✕</span></div>
+    <div id="modal-body">
+    <div class="fg"><label class="flbl">Description / Observation *</label>
+      <textarea class="fin" id="ns-text" rows="4" placeholder="Ex: Préparer la démo pour la semaine prochaine. Attente du brief créatif…"></textarea>
+    </div>
+    <div class="fg"><label class="flbl">Auteur (optionnel)</label>
+      <input class="fin" id="ns-author" placeholder="Votre prénom ou nom" list="ns-author-list">
+      <datalist id="ns-author-list"><option value="Sandrine BLEDOU"></option><option value="Evelyne YAO"></option><option value="Yvon ALECHOU"></option><option value="Cyrille BABO"></option><option value="Fabien DALIGOU"></option><option value="Othniel MBAHIA"></option><option value="Eva KOFFI"></option><option value="Nadège KOUMA Epse HUART"></option><option value="Jean AHOURE"></option><option value="Felicia DJAMA"></option><option value="Fidele YAO"></option><option value="Noe KARAMOKO"></option><option value="David OKIE"></option></datalist>
+    </div>
+    <div class="modal-acts">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveNextStep(8)">Ajouter</button>
+    </div></div>
+  </div>
+</div>
+
+<!-- ═══ RAPPORT DIRECTION (vue synthétique pour le Head of Marketing / la direction) ═══ -->
+<div class="view" id="view-directorreport">
+  <div class="g g4" style="margin-bottom:18px" id="dr-kpis"></div>
+  <div class="card" id="dr-summary" style="margin-bottom:18px;padding:20px 22px"></div>
+  <div class="tbl-wrap" style="margin-bottom:18px">
+    <div class="tbl-bar">
+      <div class="tbl-ttl">📁 Campagnes &amp; projets en cours</div>
+      <button class="btn btn-ghost btn-sm" onclick="exportDirectorReportPDF()">📄 Exporter en PDF</button>
+    </div>
+    <table class="tbl">
+      <thead><tr><th data-sort="text">Campagne / Projet</th><th data-sort="text">Client / Marque</th><th data-sort="text">Statut</th><th data-sort="number">Avancement</th><th data-sort="date">Échéance</th><th data-sort="text">Risque</th></tr></thead>
+      <tbody id="dr-projects-tbody"></tbody>
+    </table>
+  </div>
+  <div class="tbl-wrap">
+    <div class="tbl-bar"><div class="tbl-ttl">🧑‍💼 Charge de l'équipe créative</div></div>
+    <div id="dr-team-grid" style="padding:14px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px"></div>
+  </div>
+</div>
+
+<!-- PDF MODAL -->
+<div class="overlay" id="pdf-overlay" role="dialog" aria-modal="true" onclick="closePDFModal(event)">
+  <div class="modal pdf-modal" style="max-width: 780px;">
+      <div class="modal-hd"><div class="modal-ttl">📄 Exporter le dashboard en PDF</div><span class="modal-x" onclick="closePDFModal()">✕</span></div>
+      <div>
+        <div class="fg"><label class="flbl">Titre du document</label><input class="fin" id="pdf-title-input" value="Cockpit opérationnel — export dashboard"></div>
+        <div class="fg"><label class="flbl">Vues à exporter</label>
+          <div class="pdf-view-grid" id="pdf-view-grid">
+            <label class="pdf-view-item"><input type="checkbox" value="dashboard" checked=""><div><div class="pdf-view-label">Tableau de bord</div><div class="pdf-view-sub">KPIs, conversions, appels d'offre</div></div></label>
+            <label class="pdf-view-item"><input type="checkbox" value="clients" checked=""><div><div class="pdf-view-label">Clients actifs</div><div class="pdf-view-sub">Liste des clients opérationnels</div></div></label>
+            <label class="pdf-view-item"><input type="checkbox" value="prospects" checked=""><div><div class="pdf-view-label">Prospects</div><div class="pdf-view-sub">Pipeline commercial en cours</div></div></label>
+            <label class="pdf-view-item"><input type="checkbox" value="appeloffre" checked=""><div><div class="pdf-view-label">Appels d'offre</div><div class="pdf-view-sub">Dossiers AO distincts des prospects</div></div></label>
+            <label class="pdf-view-item"><input type="checkbox" value="clotures" checked=""><div><div class="pdf-view-label">Clôturés</div><div class="pdf-view-sub">Clients terminés / archivés</div></div></label>
+            <label class="pdf-view-item"><input type="checkbox" value="projects" checked=""><div><div class="pdf-view-label">Projets</div><div class="pdf-view-sub">Statuts, priorités, progression</div></div></label>
+            <label class="pdf-view-item"><input type="checkbox" value="tasks" checked=""><div><div class="pdf-view-label">Tâches</div><div class="pdf-view-sub">Pilotage opérationnel détaillé</div></div></label>
+            <label class="pdf-view-item"><input type="checkbox" value="team"><div><div class="pdf-view-label">Équipe</div><div class="pdf-view-sub">Charge et performance des membres</div></div></label>
+            <label class="pdf-view-item"><input type="checkbox" value="reports"><div><div class="pdf-view-label">Rapports</div><div class="pdf-view-sub">Synthèse de performance et finances</div></div></label>
+          </div>
+        </div>
+        <div class="pdf-preview" style="margin-top:14px"><div class="pdf-preview-ttl">Principe</div><div class="pdf-section-list"><div class="pdf-section-item"><span class="pdf-check">✓</span> Export PDF multi-vues, directement téléchargeable</div><div class="pdf-section-item"><span class="pdf-check">✓</span> Les compteurs proviennent des mêmes données dynamiques</div><div class="pdf-section-item"><span class="pdf-check">✓</span> Les sections non cochées ne sont pas exportées</div></div></div>
+        <div class="modal-acts"><button class="btn btn-ghost" onclick="closePDFModal()">Annuler</button><button class="btn btn-pdf" onclick="generatePDF()">📄 Générer le PDF</button></div>
+      </div></div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="overlay" id="export-overlay" role="dialog" aria-modal="true" onclick="if(event.target===this)closeExport(event)">
+  <div class="modal" style="max-width:340px">
+    <div class="modal-hd"><div class="modal-ttl">⬇ Exporter les données</div><span class="modal-x" onclick="closeExport()">✕</span></div>
+    <div style="display:flex;flex-direction:column;gap:9px;margin-top:6px">
+      <button class="btn btn-ghost" onclick="exportJSON()" style="justify-content:center;padding:13px">📦 Export JSON complet</button>
+      <button class="btn btn-ghost" onclick="exportCSV('projects')" style="justify-content:center;padding:13px">📊 Projets (CSV)</button>
+      <button class="btn btn-ghost" onclick="exportCSV('tasks')" style="justify-content:center;padding:13px">📋 Tâches (CSV)</button>
+      <button class="btn btn-ghost" onclick="exportCSV('clients')" style="justify-content:center;padding:13px">👥 Clients (CSV)</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-box" id="toast-box"><div class="toast" style="cursor: pointer;"><span class="toast-ico">✅</span><span class="toast-msg" style="color: var(--green);">Tâche "Uplaoder les videos de la serie " ROPERO "" créée !</span></div></div>
+
+<!-- CLIENT DETAIL OVERLAY -->
+<div class="detail-overlay" id="client-detail-overlay" role="dialog" aria-modal="true">
+  <div class="detail-topbar">
+    <div class="detail-back" onclick="closeClientDetail()">← Retour aux clients</div>
+    <div id="cd-avatar" style="width: 40px; height: 40px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-weight: 700; font-size: 13px; color: rgb(0, 0, 0); background: rgb(89, 118, 65);">AG</div>
+    <div style="flex:1">
+      <div style="font-family:var(--head);font-size:17px;font-weight:700" id="cd-name">ASA Group</div>
+      <div style="font-size:12px;color:var(--text-muted)" id="cd-sector">🏢 Immobilier</div>
+    </div>
+    <div id="cd-needs-top"><span class="badge b-creative">🎨 Créatif</span><span class="badge b-conseil">💡 Conseil</span><span class="badge b-digital">💻 Digital</span></div>
+    <button class="btn btn-ghost btn-sm" id="cd-edit-btn">✏️ Modifier</button>
+    <button class="btn btn-sm" id="cd-cloture-btn" style="background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255, 171, 0, 0.3);" title="Clôturer / Réactiver le contrat">🔒 Clôturer</button>
+  </div>
+  <div class="detail-content" id="cd-content"></div>
+</div>
+
+<!-- ══ EMBEDDED DATA — updated on every "Save file" ══ -->
+<script id="cockpit-data" type="application/json">{"clients": [], "projects": [], "tasks": [], "invoices": [], "_todos": [], "_nextTodoId": 1, "_theme": "dark", "team": [{"name": "Noé Karamoko", "role": "Directeur Artistique — Creative Lead", "phone": "", "email": "", "color": "#d4af37", "isApporteur": true, "id": 1}, {"name": "Sarah Kouassi", "role": "Cheffe de projet", "phone": "", "email": "", "color": "#2563eb", "isApporteur": false, "id": 2}, {"name": "Yann Dubois", "role": "Chargé de compte", "phone": "", "email": "", "color": "#2563eb", "isApporteur": false, "id": 3}, {"name": "Aïcha Traoré", "role": "Designer graphique", "phone": "", "email": "", "color": "#7c3aed", "isApporteur": false, "id": 4}, {"name": "Marc Lefèvre", "role": "Designer graphique", "phone": "", "email": "", "color": "#7c3aed", "isApporteur": false, "id": 5}, {"name": "Léa Bamba", "role": "Motion Designer", "phone": "", "email": "", "color": "#7c3aed", "isApporteur": false, "id": 6}, {"name": "Karim Diallo", "role": "Développeur Web", "phone": "", "email": "", "color": "#64748b", "isApporteur": false, "id": 7}, {"name": "Fatou Sy", "role": "Community Manager", "phone": "", "email": "", "color": "#64748b", "isApporteur": false, "id": 8}, {"name": "Julien Roche", "role": "Rédacteur / Copywriter", "phone": "", "email": "", "color": "#64748b", "isApporteur": false, "id": 9}]}</script>
+
+
+<script src="./js/01-app-core.js"></script>
+
+
+<!-- ══ PROSPECT PIPELINE MODAL ══ -->
+<div class="overlay" id="prospect-overlay" role="dialog" aria-modal="true" onclick="closeProspectModal(event)">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hd">
+      <div class="modal-ttl" id="prospect-modal-title">🎯 iCONNEKT — Pipeline</div>
+      <span class="modal-x" onclick="closeProspectModal()">✕</span>
+    </div>
+    <div id="prospect-modal-body">
+    <div class="fg">
+      <label class="flbl">État actuel du pipeline</label>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:6px" id="stage-selector">
+        
+          <div onclick="selectProspectStage('lead')" id="stage-opt-lead" style="padding:6px 12px;border-radius:20px;border:2px solid var(--border);
+                   background:var(--surface2);
+                   color:var(--text-muted);
+                   cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;user-select:none">
+            🌱 Nouveau lead
+          </div>
+          <div onclick="selectProspectStage('contacted')" id="stage-opt-contacted" style="padding:6px 12px;border-radius:20px;border:2px solid var(--border);
+                   background:var(--surface2);
+                   color:var(--text-muted);
+                   cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;user-select:none">
+            📞 Contacté
+          </div>
+          <div onclick="selectProspectStage('proposal')" id="stage-opt-proposal" style="padding:6px 12px;border-radius:20px;border:2px solid var(--border);
+                   background:var(--surface2);
+                   color:var(--text-muted);
+                   cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;user-select:none">
+            📄 Proposition envoyée
+          </div>
+          <div onclick="selectProspectStage('negociation')" id="stage-opt-negociation" style="padding:6px 12px;border-radius:20px;border:2px solid var(--border);
+                   background:var(--surface2);
+                   color:var(--text-muted);
+                   cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;user-select:none">
+            🤝 En négociation
+          </div>
+          <div onclick="selectProspectStage('converted')" id="stage-opt-converted" style="padding:6px 12px;border-radius:20px;border:2px solid var(--purple);
+                   background:var(--purple-dim);
+                   color:var(--purple);
+                   cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;user-select:none">
+            🎉 Converti ✅
+          </div>
+          <div onclick="selectProspectStage('lost')" id="stage-opt-lost" style="padding:6px 12px;border-radius:20px;border:2px solid var(--border);
+                   background:var(--surface2);
+                   color:var(--text-muted);
+                   cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;user-select:none">
+            ❌ Perdu
+          </div>
+      </div>
+    </div>
+    <div class="fg" style="margin-top:14px">
+      <label class="flbl">Observation <span style="color:var(--text-dim)">(optionnel)</span></label>
+      <textarea class="fin" id="obs-text" rows="3" placeholder="Ex: RDV le 15 avril, en attente de validation budget…"></textarea>
+    </div>
+    <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">
+      <button class="btn btn-ghost" onclick="closeProspectModal()">Fermer</button>
+      <button class="btn" style="background:var(--purple-dim);color:var(--purple);border:1px solid rgba(167,139,250,.3)" onclick="saveProspectStatus(13)">💾 Enregistrer</button>
+      
+    </div>
+    
+    <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
+      <div class="card-title" style="margin-bottom:10px">📋 Historique (2)</div>
+      <div class="obs-list">
+        <div class="obs-item" style="border-left-color:var(--green)">
+            <div class="obs-item-date">
+              <span>03 juin 2026, 08:54</span>
+              <span class="pipe-stage-badge ps-converted">🎉 Converti ✅</span>
+            </div>
+            <div class="obs-item-text">Prospect converti en client actif.</div>
+          </div><div class="obs-item" style="border-left-color:var(--purple)">
+            <div class="obs-item-date">
+              <span>29 mars 2026, 15:43</span>
+              <span class="pipe-stage-badge ps-negociation">🤝 En négociation</span>
+            </div>
+            <div class="obs-item-text"><em style="color:var(--text-dim)">Changement d'état sans note.</em></div>
+          </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+
+
+<!-- ══ SCRIPTS RÉCUPÉRÉS (code réactivé depuis bloc mort) ══ -->
+<script src="./js/02-dashboard-extras.js"></script>
+
+
+<script src="./js/03-suivi-module.js"></script>
+
+
+
+<script src="./js/04-legacy-patches.js"></script>
+
+<script defer="" src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;4edd5f8ec12a48cfa682ab8261b80a79&quot;,&quot;server_timing&quot;:{&quot;name&quot;:{&quot;cfCacheStatus&quot;:true,&quot;cfEdge&quot;:true,&quot;cfExtPri&quot;:true,&quot;cfL4&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfSpeedBrain&quot;:true},&quot;location_startswith&quot;:null}}" crossorigin="anonymous"></script>
+
+<script src="./js/05-intelligence-layer.js"></script>
+
+<!-- ══════════════════ AUTH & MULTI-TENANT CLOUD (indispensables) ══════════════════ -->
+<script src="./js/06-auth-cloud.js"></script>
+
+<!-- ══════════════════ UI ENHANCEMENTS: Fuse.js, Cmd+K, Flatpickr, Tippy ══════════════════ -->
+<script src="./js/07-ui-enhancements.js"></script>
+
+<!-- ══════════════════ ERROR BOUNDARY GLOBAL ══════════════════ -->
+<script src="./js/08-error-boundary.js"></script>
+</body></html>

@@ -1,0 +1,143 @@
+rules_version = '2';
+
+// ═══════════════════════════════════════════════════════
+// MCPS — Règles de sécurité Firestore (multi-tenant, RBAC serveur)
+// ───────────────────────────────────────────────────────
+// ⚠️ CE FICHIER EST LA SEULE VRAIE BARRIÈRE DE SÉCURITÉ DU PRODUIT.
+// Les contrôles côté navigateur (can(), MCPS_VALIDATE) servent l'expérience
+// utilisateur : ils sont contournables par quiconque ouvre les outils de
+// développement. Tout ce qui compte vraiment doit être appliqué ici.
+//
+// DÉPLOIEMENT OBLIGATOIRE avant toute mise en production :
+//   Firebase Console → Firestore Database → Règles → coller ce fichier → Publier
+// Sans cette étape, les règles par défaut de Firebase s'appliquent et le
+// produit n'est PAS sécurisé.
+// ═══════════════════════════════════════════════════════
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function myUser() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function myOrgId() {
+      return myUser().orgId;
+    }
+    function myRole() {
+      return myUser().role;
+    }
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    // Rôles autorisés à gérer la facturation, l'équipe et l'organisation.
+    function isPrivileged() {
+      return myRole() == 'admin' || myRole() == 'manager';
+    }
+
+    // ── Fiche utilisateur : orgId + rôle ──
+    match /users/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || myOrgId() == resource.data.orgId);
+      allow create: if isSignedIn() && request.auth.uid == uid;
+      // CORRECTIF SÉCURITÉ : auparavant, un utilisateur pouvait modifier sa propre
+      // fiche SANS restriction de champ — donc s'attribuer le rôle 'admin' lui-même,
+      // ou se rattacher à une autre organisation, par un simple appel API.
+      // Désormais : on ne peut modifier sa propre fiche QUE si orgId et role restent
+      // inchangés. Seul un admin de la même organisation peut changer un rôle.
+      allow update: if isSignedIn() && (
+        (request.auth.uid == uid
+          && request.resource.data.orgId == resource.data.orgId
+          && request.resource.data.role == resource.data.role)
+        || (myRole() == 'admin' && myOrgId() == resource.data.orgId)
+      );
+      allow delete: if false;
+    }
+
+    // ── Fiche organisation (nom, propriétaire, plan, branding) ──
+    match /orgs/{orgId} {
+      allow read: if isSignedIn() && myOrgId() == orgId;
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if isSignedIn() && myOrgId() == orgId && myRole() == 'admin';
+      allow delete: if false;
+
+      // ── Données du cockpit (clients, prospects, projets, tâches, factures…) ──
+      match /data/{docId} {
+        // Un 'member' ne peut modifier ni la facturation, ni la composition de
+        // l'équipe : ces deux blocs doivent rester identiques à l'existant.
+        function memberFieldsUnchanged() {
+          return request.resource.data.invoices == resource.data.invoices
+              && request.resource.data.team == resource.data.team;
+        }
+        function planAllows(oid) {
+          return get(/databases/$(database)/documents/orgs/$(oid)).data.plan != 'free'
+              || request.resource.data.clients.size() <= 3;
+        }
+
+        allow read: if isSignedIn() && myOrgId() == orgId;
+
+        // Plafond du plan gratuit, vérifié côté serveur : incontournable.
+        allow create: if isSignedIn() && myOrgId() == orgId && myRole() != 'readonly'
+          && planAllows(orgId);
+
+        // RBAC SERVEUR (nouveau) — auparavant, tout rôle sauf 'readonly' pouvait
+        // écrire N'IMPORTE QUOI : un 'member' pouvait supprimer tous les clients,
+        // modifier la facturation ou l'équipe via un simple appel API, malgré
+        // l'interface qui le lui interdisait. Le modèle de données actuel stocke
+        // toute l'organisation dans UN document ; on applique donc la granularité
+        // en comparant champ par champ ce qui a le droit de changer.
+        allow update: if isSignedIn() && myOrgId() == orgId && myRole() != 'readonly'
+          && planAllows(orgId)
+          && (isPrivileged() || memberFieldsUnchanged());
+
+        allow delete: if false; // on ne supprime jamais le document d'une organisation
+      }
+
+      // ── Journal d'audit ──
+      // CORRECTIF CRITIQUE : aucune règle n'existait pour cette sous-collection.
+      // Firestore refusant par défaut tout accès non explicitement autorisé, TOUTES
+      // les écritures du journal d'audit échouaient silencieusement en production
+      // (l'erreur était avalée par le catch côté application). Le journal était donc
+      // vide en permanence, alors que l'interface laissait croire le contraire.
+      match /audit_logs/{logId} {
+        allow read: if isSignedIn() && myOrgId() == orgId;
+        // L'auteur ne peut écrire qu'en son propre nom, dans sa propre organisation.
+        allow create: if isSignedIn() && myOrgId() == orgId
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.organizationId == orgId;
+        // Immutabilité : un journal d'audit modifiable ou effaçable n'a aucune
+        // valeur probante. Personne ne peut réécrire l'histoire, pas même un admin.
+        allow update, delete: if false;
+      }
+
+      // ── Tickets de support (Aide & Support dans l'application) ──
+      match /support_tickets/{ticketId} {
+        allow read: if isSignedIn() && myOrgId() == orgId;
+        allow create: if isSignedIn() && myOrgId() == orgId && request.resource.data.fromEmail == request.auth.token.email;
+        allow update, delete: if false; // géré côté support, pas depuis l'app
+      }
+    }
+
+    // ── Invitations en attente (avant inscription du collaborateur) ──
+    match /invites/{email} {
+      allow read: if isSignedIn() && request.auth.token.email.lower() == email;
+      // Un admin ne peut pas créer d'invitation avec un rôle inventé, ni inviter
+      // dans une organisation qui n'est pas la sienne.
+      allow create: if isSignedIn() && myRole() == 'admin'
+        && myOrgId() == request.resource.data.orgId
+        && request.resource.data.role in ['admin', 'manager', 'member', 'readonly'];
+      allow delete: if isSignedIn() && (
+        request.auth.token.email.lower() == email ||
+        (myRole() == 'admin' && myOrgId() == resource.data.orgId)
+      );
+      allow update: if false;
+    }
+
+    // ── Refus explicite de tout le reste ──
+    // Note : Firestore refuse DÉJÀ par défaut tout ce qui n'est pas explicitement
+    // autorisé — ce bloc ne change donc rien au comportement. Il est conservé
+    // comme documentation de l'intention, et comme rappel de la leçon apprise
+    // avec audit_logs : une collection sans règle n'est pas "ouverte", elle est
+    // totalement bloquée, et l'échec peut passer inaperçu s'il est avalé côté app.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
