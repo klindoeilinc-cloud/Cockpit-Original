@@ -314,8 +314,12 @@ UI/UX Enterprise, puis du durcissement sécurité pour une V1 commerciale.
    à de vrais modules reste possible, mais demande sa propre campagne de tests.
 4. **~47 doublons CSS restants** sur les 66 détectés — les plus risqués à
    toucher, gain marginal (le nettoyage effectué représentait 3,5 % du fichier).
-5. **Tests Playwright jamais exécutés** dans cet environnement (téléchargement
-   du navigateur bloqué). Écrits et prêts ; à lancer une première fois en local.
+5. ~~Tests Playwright jamais exécutés~~ — **résolu.** Exécutés pour la
+   première fois (environnement avec Chromium disponible) : 5/5 passants,
+   après correction de 3 bugs de la suite elle-même restés invisibles tant
+   que personne n'avait pu la lancer réellement (cible de fichier obsolète,
+   assertion i18n sur une valeur qui n'a jamais existé, panneau replié non
+   ouvert avant le clic). Détail dans `tests/README.md`.
 6. **Aucune exécution contre un vrai projet Firebase.** Tout a été vérifié en
    environnement simulé (jsdom + Firebase mocké). C'est la limite principale de
    tout ce qui précède : les règles de sécurité, en particulier, doivent être

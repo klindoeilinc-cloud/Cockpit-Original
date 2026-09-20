@@ -40,7 +40,7 @@ suite Jest qui n'existait pas sur le disque. La suite a été réellement écrit
 et le script `test:backend`, qui se contentait d'afficher un message, exécute
 désormais ces tests.*
 
-## 3. Frontend — Playwright (tests de fumée, dans un vrai navigateur)
+## 3. Frontend — Playwright (tests de fumée, dans un vrai navigateur) — exécuté et vérifié ✅
 
 Vérifie dans un vrai Chromium que l'application se charge, que l'écran de
 connexion réagit correctement, que la navigation fonctionne, et que le
@@ -48,18 +48,31 @@ sélecteur de langue bascule bien les libellés.
 
 ```bash
 npm install
-npx playwright install chromium   # une seule fois
+npx playwright install chromium   # une seule fois, si le binaire n'est pas déjà présent
 npm run test:e2e
 ```
 
-**Note honnête** : ces tests front-end sont écrits et prêts, mais le
-téléchargement du navigateur Chromium a été bloqué par les restrictions
-réseau de cet environnement de développement — je n'ai donc pas pu les
-exécuter moi-même pour confirmer qu'ils passent tous. Lance-les une première
-fois sur ta machine pour vérifier, et corrige-moi si un sélecteur ne
-correspond plus après une future modification de l'interface. La suite #1
-(jsdom) couvre déjà la même zone fonctionnelle et a pu être vérifiée
-directement, elle reste la référence en attendant.
+**Exécutée et passante (5/5)** — pour la première fois depuis l'écriture de
+cette suite. Trois vrais bugs corrigés à cette occasion, invisibles tant que
+personne n'avait pu la lancer dans un vrai navigateur :
+
+1. La cible pointait encore vers `MCPS_Cockpit_Production_Universal.html` en
+   `file://` — un fichier qui n'existe plus depuis le passage à la structure
+   modulaire, et un protocole que l'application refuse de toute façon
+   (`localStorage` bloqué en `file://`, voir plus haut). `playwright.config.js`
+   sert désormais le dossier réel en http via `tests/static-server.js`.
+2. Le test de bascule de langue comparait `nav.dashboard` entre "Tableau de
+   Bord" et "Dashboard" — deux valeurs qui n'ont jamais existé dans le code
+   (`nav.dashboard` vaut "Command Center" dans les deux langues, un choix de
+   branding assumé). Corrigé pour comparer `nav.today` ("Aujourd'hui"/"Today"),
+   qui varie réellement.
+3. Le même test cliquait sur le sélecteur de langue sans d'abord ouvrir le
+   panneau "Outils" qui le contient (replié par défaut,
+   `#sb-tools-toggle[aria-expanded="false"]`) — timeout systématique.
+
+La suite #1 (jsdom) couvre la même zone fonctionnelle sans navigateur et
+reste la plus rapide à lancer en boucle pendant le développement ; celle-ci
+valide en plus le rendu et les interactions réelles du DOM.
 
 ## Étendre la couverture
 
