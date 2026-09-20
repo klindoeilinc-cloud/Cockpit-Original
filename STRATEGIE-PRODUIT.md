@@ -250,3 +250,57 @@ il ne fait pour l'instant aucun marketing lui-même — combler cet écart
 (campagne réelle, calendrier éditorial, approbation client, connexion à la
 performance) est la condition non négociable pour que le produit tienne la
 promesse de son propre nom.**
+
+---
+
+## H. Positionnement de créneau (décidé — à valider terrain, voir `VALIDATION-TERRAIN.md`)
+
+**Thèse :** le pont coût de production ↔ performance marketing réelle
+(section D) est l'avantage produit. Il devient un **moat**, pas seulement
+une avance, une fois combiné à une localisation profonde qu'aucun acteur
+global n'a intérêt économique à faire pour un marché qu'il juge trop
+petit : facturation en XOF via Mobile Money (pas seulement Stripe),
+collaboration via WhatsApp (pas Slack/email), résilience réseau présentée
+comme argument de vente et non comme détail technique, français natif.
+
+**Cible d'hypothèse** : agences et studios créatifs/communication
+d'Afrique francophone (Dakar, Abidjan, Bamako, Ouagadougou, Cotonou,
+Lomé...). Non vérifiée — objet de `VALIDATION-TERRAIN.md`.
+
+**Pricing d'hypothèse** (par organisation, pas par utilisateur) :
+Gratuit (existant) / Pro ~25 000 XOF/mois / Agence+ ~50 000 XOF/mois.
+
+**Second angle, plus ambitieux** : ouvrir le produit à la tête de
+marketing côté entreprise (pas seulement l'agence), qui pilote plusieurs
+agences externes. Les indicateurs déjà existants de l'Intelligence Layer
+(`Revision Rate`, `First-Time-Right Rate`, `SLA Compliance`, `Client
+Friction Index`) sont, retournés du point de vue de l'annonceur,
+exactement ce qui manque pour comparer objectivement des prestataires —
+personne d'autre sur le marché ne le fait.
+
+**Décision d'architecture pour ce second angle : données séparées entre
+l'agence et l'entreprise cliente, pas un document partagé.** Chaque
+organisation Firestore reste propriétaire de ses propres données. Le pont
+entre les deux est un **rapport partagé explicite** (instantané filtré,
+publié volontairement par l'agence, consultable en lecture seule côté
+client — extension du mécanisme d'export PDF déjà existant plutôt qu'un
+partage de document brut). Raisons : (1) éviter d'empiler un partage
+inter-organisations sur l'architecture à document unique par organisation
+déjà identifiée en risque P0 dans `AUDIT.md` avant qu'elle soit corrigée ;
+(2) une agence ne peut pas exposer marges/coûts internes à un client par
+un partage total ; (3) éviter le démarrage à froid à deux versants — avec
+des données séparées, chaque face (agence, entreprise) tire de la valeur
+dès le premier jour, sans dépendre de l'adoption de l'autre.
+
+**Séquence retenue :**
+1. Validation terrain (`VALIDATION-TERRAIN.md`) — avant tout développement.
+2. Stabilisation de l'architecture agence existante (P0 de `AUDIT.md`,
+   notamment l'éclatement du document unique par organisation), qui devient
+   un prérequis renforcé si un pont inter-organisations est prévu ensuite.
+3. Rapport partagé en lecture seule (agence → client) — le plus petit
+   développement qui démontre la proposition de valeur, sans intégration
+   tierce ni choix de prestataire Mobile Money à trancher au préalable.
+4. Localisation paiement (Mobile Money) et collaboration (WhatsApp) une
+   fois la validation terrain confirmée.
+5. Reste de la feuille de route produit (section E) et espace entreprise
+   à deux faces.
