@@ -210,7 +210,7 @@ sans les données pour y répondre.
 | 3 | Rôle "client" + portail en lecture/commentaire limité | Débloque l'approbation (C.3/C.4), déjà partiellement supporté par le RBAC existant | Moyen |
 | 4 | Workflow d'approbation créative (upload, commentaires positionnés, versions, statut) | Donne enfin un sens produit au champ `revisions` déjà central dans l'Intelligence Layer | Élevé |
 | 5 | Une intégration analytics (GA4 en premier — API simple, gratuite) reliée par campagne | Bascule l'Intelligence Layer d'indicateurs internes vers de la vraie performance marketing (C.6) | Moyen |
-| 6 | Briefs structurés par type de prestation | Améliore un indicateur déjà existant sans rien casser (C.8) | Faible |
+| 6 | **Livré** — Briefs structurés (objectifs, audience, ton, contraintes, échéance) | Améliore un indicateur déjà existant sans rien casser (C.8) | Faible |
 | 7 | Notifications email + commentaires threadés + formulaire d'invitation | Hygiène de collaboration minimale attendue en 2026 (C.9) | Faible/Moyen |
 | 8 | Bibliothèque de contenu/marque par client (DAM léger) | Capitalisation, prérequis naturel de C.2/C.3 | Moyen |
 | 9 | Assistant IA (premiers jets de copy depuis un brief structuré, résumés automatiques) | Aligne le produit sur son propre nom, différenciation rapide une fois 1/6/8 en place | Moyen/Élevé |

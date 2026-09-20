@@ -631,6 +631,67 @@ async function e2eTests() {
     });
   }
 
+  suite("E2E — Brief structuré (client)", () => {});
+  {
+    const { win, doc } = await loadApp({ role: "admin" });
+    await wait(2000);
+    unlock(win, doc);
+    win.openModal("client");
+    await test("les champs de brief structuré sont bien rendus dans le modal", () => {
+      assert(win.document.getElementById('fc-brief-objectives'), "champ objectifs absent du modal");
+      assert(win.document.getElementById('fc-brief-audience'), "champ audience absente du modal");
+      assert(win.document.getElementById('fc-brief-deadline'), "champ échéance absent du modal");
+      assert(win.document.getElementById('fc-brief'), "le champ 'contexte complémentaire' (ancien brief) doit rester disponible");
+    });
+    win.eval(`
+      document.getElementById('fc-name').value = 'Client Brief E2E';
+      document.getElementById('fc-brief-objectives').value = 'Lancer la nouvelle gamme au T4';
+      document.getElementById('fc-brief-audience').value = 'Urbains 25-40 ans';
+      document.getElementById('fc-brief-tone').value = 'Premium, sobre';
+      document.getElementById('fc-brief-deadline').value = '2026-11-01';
+    `);
+    win.submitClient();
+    await test("les champs structurés sont bien enregistrés sur le client", () => {
+      win.eval(`window.__cb = DB.clients.find(c=>c.name==='Client Brief E2E');`);
+      assertEqual(win.__cb.briefObjectives, 'Lancer la nouvelle gamme au T4');
+      assertEqual(win.__cb.briefAudience, 'Urbains 25-40 ans');
+      assertEqual(win.__cb.briefDeadline, '2026-11-01');
+    });
+    await test("le brief structuré est bien affiché dans la fiche client (pas seulement enregistré)", () => {
+      win.eval(`openClientDetail(window.__cb.id);`);
+      const html = win.document.getElementById('client-detail-overlay').innerHTML;
+      assert(html.includes('Lancer la nouvelle gamme au T4'), "les objectifs doivent apparaître dans la fiche client");
+      assert(html.includes('Urbains 25-40 ans'), "l'audience doit apparaître dans la fiche client");
+    });
+  }
+
+  suite("Unit — Brief Quality Score (computeIntelligence)", () => {});
+  {
+    const { win } = await loadApp({ firebaseEnabled: false });
+    await wait(500);
+    win.eval(`
+      DB.clients.push(
+        {id:801, name:'Brief complet', sector:'Tech', color:'#fff', needs:['creative','digital'], budget:1000000,
+         briefObjectives:'X', briefAudience:'Y', briefTone:'Z', briefConstraints:'W', briefDeadline:'2026-12-01'},
+        {id:802, name:'Ancien brief texte libre uniquement', sector:'Tech', color:'#fff', needs:['creative'],
+         brief:'a'.repeat(250)},
+        {id:803, name:'Rien renseigné', sector:'Tech', color:'#fff'}
+      );
+      saveDB();
+    `);
+    await test("le score moyen reflète les 3 profils (100 + 62 + 0) / 3 = 54", () => {
+      // 801 : objectifs(25)+audience(20)+ton(10)+contraintes(10)+échéance(10)+2 besoins(15)+budget(10) = 100
+      // 802 : brief texte 250 car. (55, repli car pas de champ structuré)+1 besoin(7)+pas de budget(0) = 62
+      // 803 : rien renseigné = 0
+      win.eval(`window.__scores = computeIntelligence();`);
+      assertEqual(win.__scores.briefQuality, 54);
+    });
+    await test("un client sans aucune donnée de brief ne fait pas planter le calcul", () => {
+      win.eval(`window.__ok = true; try { computeIntelligence(); } catch(e) { window.__ok = false; }`);
+      assert(win.__ok);
+    });
+  }
+
   suite("E2E — Facture", () => {});
   {
     const { win, doc } = await loadApp({ role: "admin" });

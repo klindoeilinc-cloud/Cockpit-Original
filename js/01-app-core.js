@@ -1926,7 +1926,11 @@ function submitClient(existingId=0) {
   if (!existingId && typeof _checkPlanLimit === 'function' && !_checkPlanLimit('clients', DB.clients.length)) return;
   const name=document.getElementById('fc-name').value.trim();
   const needs=[...document.querySelectorAll('.need-chk')].filter(el=>[...el.classList].some(c=>c.startsWith('sel-'))).map(el=>[...el.classList].find(c=>c.startsWith('sel-')).replace('sel-',''));
-  const obj={name, sector:document.getElementById('fc-sector').value, needs, brief:document.getElementById('fc-brief').value.trim(), budget:parseInt(document.getElementById('fc-budget')?.value)||0, contractDuration:parseInt(document.getElementById('fc-duration')?.value)||0, color:document.getElementById('fc-color').value, avatar:name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)};
+  const obj={name, sector:document.getElementById('fc-sector').value, needs, brief:document.getElementById('fc-brief').value.trim(),
+    briefObjectives:document.getElementById('fc-brief-objectives')?.value?.trim()||'', briefAudience:document.getElementById('fc-brief-audience')?.value?.trim()||'',
+    briefTone:document.getElementById('fc-brief-tone')?.value?.trim()||'', briefConstraints:document.getElementById('fc-brief-constraints')?.value?.trim()||'',
+    briefDeadline:document.getElementById('fc-brief-deadline')?.value||null,
+    budget:parseInt(document.getElementById('fc-budget')?.value)||0, contractDuration:parseInt(document.getElementById('fc-duration')?.value)||0, color:document.getElementById('fc-color').value, avatar:name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)};
   const _v = MCPS_VALIDATE.client(obj); if (!_v.valid) { showToast('⚠️',_v.errors[0],'var(--amber)'); if (window._mcpsShowFormErrors) window._mcpsShowFormErrors(_v.errors); return; }
   if(existingId) { Object.assign(gc(existingId), obj); showToast('✅',`Client "${name}" mis à jour !`,'var(--green)'); }
   else { obj.id=nextId.client++; DB.clients.push(obj); showToast('✅',`Client "${name}" créé !`,'var(--green)'); }
@@ -2319,6 +2323,13 @@ function openClientDetail(cid) {
       <!-- Profil & contrat -->
       <div class="card">
         <div class="card-hd"><div class="card-title">Profil & Contrat</div></div>
+        ${(c.briefObjectives||c.briefAudience||c.briefTone||c.briefConstraints||c.briefDeadline)?`<div style="font-size:12px;line-height:1.7;padding:10px 12px;background:var(--surface2);border-radius:7px;border-left:3px solid ${c.color};margin-bottom:10px">
+          ${c.briefObjectives?`<div><strong>Objectifs :</strong> ${esc(c.briefObjectives)}</div>`:''}
+          ${c.briefAudience?`<div><strong>Audience :</strong> ${esc(c.briefAudience)}</div>`:''}
+          ${c.briefTone?`<div><strong>Ton :</strong> ${esc(c.briefTone)}</div>`:''}
+          ${c.briefConstraints?`<div><strong>Contraintes :</strong> ${esc(c.briefConstraints)}</div>`:''}
+          ${c.briefDeadline?`<div><strong>Échéance du brief :</strong> ${fmtDateShort(c.briefDeadline)}</div>`:''}
+        </div>`:''}
         ${c.brief?`<div style="font-size:12.5px;color:var(--text-muted);line-height:1.6;padding:10px 12px;background:var(--surface2);border-radius:7px;border-left:3px solid ${c.color};margin-bottom:14px">"${esc(c.brief)}"</div>`:''}
         <div style="display:flex;flex-direction:column;gap:8px">
           ${c.budget?`<div class="mstat"><span>💰</span><span class="mstat-lbl">Budget total</span><span class="mstat-val" style="color:var(--amber)">${formatXOF(c.budget)}</span></div>`:''}
@@ -2575,8 +2586,18 @@ function _openModalLegacy(type, data={}) {
       <div class="fg"><label class="flbl">Besoins de l'agence (multi-sélection)</label>
         <div class="need-checks">${needCheck('creative','🎨 Créatif')}${needCheck('conseil','💡 Conseil')}${needCheck('digital','💻 Digital')}</div>
       </div>
-      <div class="fg"><label class="flbl">Brief / Description du besoin</label><textarea class="fin" id="fc-brief" rows="3">${esc(c.brief||'')}</textarea></div>
-      
+      <div class="fg" style="border-top:1px solid var(--border);padding-top:14px;margin-top:2px">
+        <label class="flbl" style="margin-bottom:8px">Brief structuré (STRATEGIE-PRODUIT.md C.8 — remplace le champ texte libre comme mesure de qualité du brief)</label>
+      </div>
+      <div class="fg"><label class="flbl">Objectifs</label><textarea class="fin" id="fc-brief-objectives" rows="2" placeholder="Ce que le client cherche à obtenir">${esc(c.briefObjectives||'')}</textarea></div>
+      <div class="fg"><label class="flbl">Audience cible</label><input class="fin" id="fc-brief-audience" value="${esc(c.briefAudience||'')}" placeholder="À qui ça s'adresse"></div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">Ton / positionnement</label><input class="fin" id="fc-brief-tone" value="${esc(c.briefTone||'')}" placeholder="Ex: premium, accessible, corporate…"></div>
+        <div class="fg"><label class="flbl">Échéance du brief</label><input class="fin" type="date" id="fc-brief-deadline" value="${c.briefDeadline||''}"></div>
+      </div>
+      <div class="fg"><label class="flbl">Contraintes / références</label><textarea class="fin" id="fc-brief-constraints" rows="2" placeholder="Contraintes de marque, références à respecter ou à éviter">${esc(c.briefConstraints||'')}</textarea></div>
+      <div class="fg"><label class="flbl">Contexte complémentaire (notes libres, optionnel)</label><textarea class="fin" id="fc-brief" rows="2">${esc(c.brief||'')}</textarea></div>
+
       <div class="fg"><label class="flbl">Couleur identité</label><input class="fin" type="color" id="fc-color" value="${c.color||'#00c8ff'}" style="height:40px;cursor:pointer"></div>
       <div class="modal-acts">
         <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>

@@ -33,15 +33,31 @@
     }
 
     // 2. Brief Quality Score
+    // STRATEGIE-PRODUIT.md C.8 : la longueur brute d'un champ texte libre est
+    // un proxy grossier ("un brief long est-il vraiment un bon brief ?").
+    // Un brief structuré (objectifs/audience/ton/contraintes/échéance,
+    // formulaire dédié dans le modal client) donne une mesure réelle de
+    // complétude. Les clients jamais migrés vers ce formulaire retombent sur
+    // l'ancien calcul par longueur, plafonné plus bas — pour ne pas les
+    // pénaliser à zéro, tout en incitant à migrer.
     const briefPool = [...active,...prospects,...appels];
     let briefQuality = null;
     if (briefPool.length) {
       const scored = briefPool.map(c=>{
         let s=0;
-        const briefLen = (c.brief||'').trim().length;
-        if (briefLen>=200) s+=60; else if(briefLen>=80) s+=40; else if(briefLen>=20) s+=20;
-        if ((c.needs||[]).length>=2) s+=25; else if((c.needs||[]).length===1) s+=12;
-        if (c.budget) s+=15;
+        const hasStructuredBrief = !!(c.briefObjectives || c.briefAudience || c.briefTone || c.briefConstraints || c.briefDeadline);
+        if (hasStructuredBrief) {
+          if ((c.briefObjectives||'').trim()) s+=25;
+          if ((c.briefAudience||'').trim()) s+=20;
+          if ((c.briefTone||'').trim()) s+=10;
+          if ((c.briefConstraints||'').trim()) s+=10;
+          if (c.briefDeadline) s+=10;
+        } else {
+          const briefLen = (c.brief||'').trim().length;
+          if (briefLen>=200) s+=55; else if(briefLen>=80) s+=35; else if(briefLen>=20) s+=15;
+        }
+        if ((c.needs||[]).length>=2) s+=15; else if((c.needs||[]).length===1) s+=7;
+        if (c.budget) s+=10;
         return Math.min(100,s);
       });
       briefQuality = Math.round(scored.reduce((a,b)=>a+b,0)/scored.length);
