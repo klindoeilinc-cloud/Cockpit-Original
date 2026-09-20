@@ -3,7 +3,7 @@
 // aux dernières données synchronisées. Les écritures (sauvegarde cloud) nécessitent
 // toujours une connexion — seule la consultation fonctionne hors-ligne.
 
-const CACHE_NAME = 'mcps-cache-v2';
+const CACHE_NAME = 'mcps-cache-v3';
 const APP_SHELL = [
   './index.html',
   './manifest.json',
@@ -18,6 +18,7 @@ const APP_SHELL = [
   './js/06-auth-cloud.js',
   './js/07-ui-enhancements.js',
   './js/08-error-boundary.js',
+  './js/09-shared-reports.js',
 ];
 
 self.addEventListener('install', (event) => {

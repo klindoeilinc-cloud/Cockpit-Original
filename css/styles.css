@@ -1200,3 +1200,27 @@ body.role-readonly .btn-primary{opacity:.35;pointer-events:none;filter:grayscale
 .flatpickr-months .flatpickr-prev-month,.flatpickr-months .flatpickr-next-month{color:var(--text-muted)}
 .numInputWrapper span{opacity:.6}
 
+/* ═══ Rapport partagé (agence → client externe, sans authentification) ═══
+   Voir js/09-shared-reports.js et STRATEGIE-PRODUIT.md section H. */
+body.shared-report-mode .hamburger,
+body.shared-report-mode .sidebar-backdrop,
+body.shared-report-mode .sidebar,
+body.shared-report-mode .main,
+body.shared-report-mode #main-overlay,
+body.shared-report-mode #auth-screen,
+body.shared-report-mode .toast-box{display:none !important}
+#shared-report-view{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:40px 16px}
+.shared-report-loading{color:var(--text-muted);font:500 13px var(--body);margin-top:80px}
+.shared-report-card{width:100%;max-width:640px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 30px;margin-top:20px}
+.shared-report-badge{display:inline-block;font:700 10.5px/1 var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--accent);background:var(--accent-dim);padding:5px 10px;border-radius:var(--radius-pill);margin-bottom:14px}
+.shared-report-card h2{font:700 20px/1.3 var(--head);color:var(--text);margin:0 0 6px}
+.shared-report-meta{font:500 12.5px var(--body);color:var(--text-muted);margin-bottom:18px}
+.shared-report-progress-wrap{margin-bottom:20px}
+.shared-report-progress-bar{height:8px;border-radius:var(--radius-pill);background:var(--surface3);overflow:hidden;margin-bottom:6px}
+.shared-report-progress-bar div{height:100%;background:var(--accent);border-radius:var(--radius-pill)}
+.shared-report-progress-label{font:600 11.5px var(--mono);color:var(--text-muted)}
+.shared-report-table{width:100%;border-collapse:collapse;margin-bottom:18px}
+.shared-report-table th{text-align:left;font:700 10.5px var(--mono);text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);padding:8px 10px;border-bottom:1px solid var(--border)}
+.shared-report-table td{padding:8px 10px;font-size:13px;color:var(--text);border-bottom:1px solid var(--border)}
+.shared-report-footer{font:500 11px var(--body);color:var(--text-dim);text-align:center;padding-top:8px}
+

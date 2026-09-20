@@ -297,9 +297,17 @@ dès le premier jour, sans dépendre de l'adoption de l'autre.
 2. Stabilisation de l'architecture agence existante (P0 de `AUDIT.md`,
    notamment l'éclatement du document unique par organisation), qui devient
    un prérequis renforcé si un pont inter-organisations est prévu ensuite.
-3. Rapport partagé en lecture seule (agence → client) — le plus petit
-   développement qui démontre la proposition de valeur, sans intégration
-   tierce ni choix de prestataire Mobile Money à trancher au préalable.
+3. **Livré** — Rapport partagé en lecture seule (agence → client) : le plus
+   petit développement qui démontre la proposition de valeur, sans
+   intégration tierce ni choix de prestataire Mobile Money à trancher au
+   préalable. Bouton "🔗 Partager" sur chaque projet de la vue Rapport
+   Direction ; génère un lien `?share=orgId:shareId` consultable sans
+   compte, montrant statut/avancement/tâches/révisions d'un seul projet —
+   jamais de budget, d'heures internes ni de données d'un autre client
+   (voir `js/09-shared-reports.js`, règle Firestore dédiée dans
+   `firestore.rules`, 4 tests dans `tests/mcps-test-suite.js`). Peut déjà
+   servir de support de démonstration pendant les entretiens de
+   `VALIDATION-TERRAIN.md`.
 4. Localisation paiement (Mobile Money) et collaboration (WhatsApp) une
    fois la validation terrain confirmée.
 5. Reste de la feuille de route produit (section E) et espace entreprise

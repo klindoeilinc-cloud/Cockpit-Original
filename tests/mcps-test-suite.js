@@ -223,6 +223,31 @@ async function unitTests() {
   await test("invoice() rejette un montant nul", () => assert(!win.MCPS_VALIDATE.invoice({ label: "X", amount: 0, clientId: 1 }).valid));
   await test("teamMember() rejette un email invalide", () => assert(!win.MCPS_VALIDATE.teamMember({ name: "X", email: "pas-un-email" }).valid));
 
+  suite("Unit — Rapport partagé (buildProjectShareSnapshot)", () => {});
+  {
+    const project = { id: 1, name: "Campagne Rentrée", clientId: 10, status: "En cours", priority: "Haute", startDate: "2026-09-01", endDate: "2026-10-01" };
+    const client = { id: 10, name: "ACME Corp", budget: 5000000, contact: { email: "secret@acme.example" } };
+    const tasks = [
+      { id: 100, projectId: 1, name: "Visuel clé", status: "Terminé", revisions: 2, estimatedHours: 8, realHours: 11, qualityRating: 4, assignedTo: "Aïcha Traoré" },
+      { id: 101, projectId: 1, name: "Copywriting", status: "En cours", revisions: 0, estimatedHours: 3, realHours: 1, assignedTo: "Julien Roche" },
+      { id: 102, projectId: 2, name: "Tâche d'un autre projet", status: "Terminé", revisions: 0 },
+    ];
+    const snap = win.buildProjectShareSnapshot(project, client, tasks);
+    await test("ne contient que les 2 tâches du projet partagé, pas celles des autres projets", () => assertEqual(snap.tasks.length, 2));
+    await test("expose le nom du client mais aucun champ financier du client", () => {
+      assertEqual(snap.clientName, "ACME Corp");
+      assert(JSON.stringify(snap).indexOf("5000000") === -1, "le budget client ne doit jamais apparaître dans l'instantané partagé");
+      assert(JSON.stringify(snap).indexOf("secret@acme.example") === -1, "le contact client ne doit jamais apparaître dans l'instantané partagé");
+    });
+    await test("n'expose ni heures, ni note qualité, ni responsable — seulement statut et révisions", () => {
+      const t = snap.tasks.find(t => t.name === "Visuel clé");
+      assert(t.revisions === 2, "les révisions doivent rester visibles (c'est le point du rapport)");
+      assert(!("estimatedHours" in t) && !("realHours" in t) && !("qualityRating" in t) && !("assignedTo" in t),
+        "heures, note qualité et responsable ne doivent jamais fuiter dans l'instantané partagé");
+    });
+    await test("calcule un avancement cohérent (1 tâche terminée sur 2)", () => assertEqual(snap.progressPct, 50));
+  }
+
   suite("Unit — permissions (can())", () => {});
   // MCPS_ROLE non défini en mode local : can() doit tout autoriser (comportement historique solo)
   await test("can() autorise tout en mode local (pas de compte)", () => assert(win.can("client.delete") === true));

@@ -1795,8 +1795,9 @@ function renderDirectorReport(){
       <td>${pct}%</td>
       <td>${p.endDate?fmtDateShort(p.endDate):'—'}</td>
       <td>${riskLbl[risk]}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="shareProject(${p.id})" title="Créer un lien de suivi en lecture seule pour ce client">🔗 Partager</button></td>
     </tr>`;
-  }).join('') : `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">Aucun projet actif pour l'instant</td></tr>`;
+  }).join('') : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">Aucun projet actif pour l'instant</td></tr>`;
 
   const team = DB.team || [];
   const elTeam = document.getElementById('dr-team-grid');

@@ -113,6 +113,34 @@ service cloud.firestore {
         allow create: if isSignedIn() && myOrgId() == orgId && request.resource.data.fromEmail == request.auth.token.email;
         allow update, delete: if false; // géré côté support, pas depuis l'app
       }
+
+      // ── Rapports partagés (agence → client externe, lecture seule) ──
+      // Modèle de sécurité DÉLIBÉRÉMENT différent du reste : c'est le seul
+      // document de tout le produit lisible SANS authentification. Un client
+      // externe n'a pas de compte MCPS — le lien lui-même (contenant un
+      // shareId aléatoire non devinable) est la seule clé d'accès, comme un
+      // lien "toute personne disposant du lien" de Google Docs. Deux
+      // garanties compensent l'absence d'identité :
+      //   1. Le document ne contient JAMAIS de champ brut de `orgs/{orgId}/data` —
+      //      uniquement un instantané pré-filtré construit côté client par
+      //      buildProjectShareSnapshot() (voir js/09-shared-reports.js), qui
+      //      exclut explicitement budgets, heures, marge, et tout autre client.
+      //   2. `allow list: if false` empêche toute énumération : un shareId
+      //      ne peut être obtenu que par celui à qui l'agence l'a envoyé.
+      match /shared_reports/{shareId} {
+        allow get: if resource.data.active == true;
+        allow list: if false;
+        allow create: if isSignedIn() && myOrgId() == orgId && myRole() != 'readonly'
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.active == true;
+        // Seul le créateur ou un rôle privilégié peut révoquer (active:false) ;
+        // l'instantané est figé au moment du partage — republier = créer un
+        // nouveau shareId, jamais modifier celui-ci après coup.
+        allow update: if isSignedIn() && myOrgId() == orgId
+          && (resource.data.createdBy == request.auth.uid || isPrivileged())
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active','updatedAt']);
+        allow delete: if false;
+      }
     }
 
     // ── Invitations en attente (avant inscription du collaborateur) ──
