@@ -139,6 +139,7 @@ window.prompt = (msg) => { if (/email/i.test(msg)) return 'colleague@test.com'; 
 window._auditEntries = [];
 window._toasts = [];
 window._setCallCount = 0;
+window._sharedReports = {};
 let _doc = { clients: [], prospects: [], projects: [], tasks: [], invoices: [], team: [], _todos: [], _nextTodoId: 1, _theme: 'dark', _version: 0 };
 function _mkAuditLogsCollection(){
   return {
@@ -146,6 +147,31 @@ function _mkAuditLogsCollection(){
     orderBy(){ return this; }, limit(){ return this; },
     get: async () => ({ forEach: (cb) => { [...window._auditEntries].reverse().forEach(d => cb({ data: () => d })); } }),
   };
+}
+// Mock minimal mais réaliste de la sous-collection shared_reports (voir
+// js/09-shared-reports.js) : assez pour tester create/get/where/update sans
+// jamais toucher un vrai projet Firebase, dans le même esprit que le mock
+// audit_logs ci-dessus.
+function _mkSharedReportsCollection(){
+  const col = {
+    _filters: [],
+    doc(id){
+      return {
+        set: async (data) => { window._sharedReports[id] = { ...data }; },
+        get: async () => ({ exists: !!window._sharedReports[id], data: () => window._sharedReports[id] }),
+        update: async (patch) => { Object.assign(window._sharedReports[id], patch); },
+      };
+    },
+    where(field, op, val){ col._filters.push([field, op, val]); return col; },
+    orderBy(){ return col; },
+    get: async () => {
+      let entries = Object.entries(window._sharedReports).map(([id, data]) => ({ id, data }));
+      col._filters.forEach(([field, op, val]) => { entries = entries.filter(e => op === '==' ? e.data[field] === val : true); });
+      col._filters = [];
+      return { forEach: (cb) => entries.forEach(e => cb({ id: e.id, data: () => e.data })) };
+    },
+  };
+  return col;
 }
 function _mkDataDocRef(){ return { get: async()=>({exists:true,data:()=>_doc}), set: async(v)=>{ _doc=v; window._setCallCount++; } }; }
 function _mkQ(path){
@@ -156,7 +182,7 @@ function _mkQ(path){
     doc(id){
       if (path==='users') return { get: async()=>({exists:true,data:()=>({orgId:'o1',role:'${role}',email:'a@t.com'})}) };
       if (path==='orgs') return {
-        collection(s){ if(s==='data') return { doc(){ return _mkDataDocRef(); } }; if(s==='audit_logs') return _mkAuditLogsCollection(); return _mkQ(s); },
+        collection(s){ if(s==='data') return { doc(){ return _mkDataDocRef(); } }; if(s==='audit_logs') return _mkAuditLogsCollection(); if(s==='shared_reports') return _mkSharedReportsCollection(); return _mkQ(s); },
         get: async()=>({exists:true,data:()=>({})}), set: async()=>{},
       };
       return _mkQ(path+'/'+id);
@@ -689,6 +715,52 @@ async function e2eTests() {
     await test("un client sans aucune donnée de brief ne fait pas planter le calcul", () => {
       win.eval(`window.__ok = true; try { computeIntelligence(); } catch(e) { window.__ok = false; }`);
       assert(win.__ok);
+    });
+  }
+
+  suite("E2E — Rapport partagé : création, liste, révocation (cloud)", () => {});
+  {
+    const { win, doc } = await loadApp({ role: "admin" });
+    await wait(2000);
+    unlock(win, doc);
+    win.eval(`
+      DB.clients.push({id:600, name:'Client Partage', sector:'Tech', color:'#fff'});
+      DB.projects.push({id:600, name:'Projet à partager', clientId:600, status:'En cours'});
+      saveDB();
+    `);
+    // CORRECTIF CRITIQUE : MCPS_ORG_ID est un `let` privé à l'IIFE de
+    // js/06-auth-cloud.js — js/09-shared-reports.js le référençait
+    // directement, ce qui ne levait pas d'erreur (typeof sur un identifiant
+    // non déclaré renvoie "undefined" sans throw) mais désactivait TOUJOURS
+    // silencieusement le partage, même connecté au cloud, depuis la toute
+    // première version de ce module. Aucun test n'appelait alors shareProject()
+    // pour de vrai (seul buildProjectShareSnapshot, une fonction pure non
+    // affectée, était testé) — d'où ce bug resté invisible jusqu'ici.
+    await test("_mcpsAuthContext() expose l'organisation courante une fois connecté", () => {
+      win.eval(`window.__ctx = _mcpsAuthContext();`);
+      assert(win.__ctx.orgId, "orgId doit être renseigné après connexion — sinon shareProject() se désactive silencieusement, comme le bug corrigé ici");
+    });
+    let shareUrl = null;
+    await test("shareProject() crée réellement un document shared_reports (pas juste un instantané en mémoire)", async () => {
+      const before = Object.keys(win._sharedReports).length;
+      await win.shareProject(600);
+      assertEqual(Object.keys(win._sharedReports).length, before + 1);
+      const created = Object.values(win._sharedReports)[0];
+      assertEqual(created.snapshot.projectName, 'Projet à partager');
+      assert(created.active === true);
+      assert(created.createdBy, "createdBy doit être renseigné (exigé par firestore.rules à la création)");
+    });
+    await test("listActiveShares() retrouve le lien tout juste créé", async () => {
+      const shares = await win.listActiveShares();
+      assertEqual(shares.length, 1);
+      assertEqual(shares[0].snapshot.projectName, 'Projet à partager');
+    });
+    await test("revokeShare() désactive le lien, qui disparaît de listActiveShares()", async () => {
+      const before = await win.listActiveShares();
+      await win.revokeShare(before[0].id);
+      const after = await win.listActiveShares();
+      assertEqual(after.length, 0);
+      assertEqual(win._sharedReports[before[0].id].active, false);
     });
   }
 

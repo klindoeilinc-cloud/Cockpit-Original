@@ -305,9 +305,21 @@ dès le premier jour, sans dépendre de l'adoption de l'autre.
    compte, montrant statut/avancement/tâches/révisions d'un seul projet —
    jamais de budget, d'heures internes ni de données d'un autre client
    (voir `js/09-shared-reports.js`, règle Firestore dédiée dans
-   `firestore.rules`, 4 tests dans `tests/mcps-test-suite.js`). Peut déjà
-   servir de support de démonstration pendant les entretiens de
-   `VALIDATION-TERRAIN.md`.
+   `firestore.rules`). Panneau "Mes liens partagés" (sidebar) pour lister et
+   révoquer les liens actifs. Peut déjà servir de support de démonstration
+   pendant les entretiens de `VALIDATION-TERRAIN.md`.
+   **Correctif important a posteriori** : la toute première version ne
+   fonctionnait en réalité JAMAIS connecté au cloud — `MCPS_ORG_ID` est une
+   variable privée à la fermeture (IIFE) de `js/06-auth-cloud.js`,
+   invisible depuis `js/09-shared-reports.js` ; le garde-fou censé détecter
+   le mode local (`typeof MCPS_ORG_ID`) était donc toujours vrai, y compris
+   connecté, et désactivait silencieusement le partage. Passé inaperçu car
+   aucun test n'appelait `shareProject()` pour de vrai (seule la fonction
+   pure `buildProjectShareSnapshot`, non affectée, était testée). Corrigé
+   via un accesseur exposé explicitement (`_mcpsAuthContext()`), verrouillé
+   par 4 nouveaux tests qui appellent réellement `shareProject()` /
+   `listActiveShares()` / `revokeShare()` de bout en bout. Suite complète :
+   84/84 (jsdom) + 5/5 (Playwright).
 4. Localisation paiement (Mobile Money) et collaboration (WhatsApp) une
    fois la validation terrain confirmée.
 5. Reste de la feuille de route produit (section E) et espace entreprise

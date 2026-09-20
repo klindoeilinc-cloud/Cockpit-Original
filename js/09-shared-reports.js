@@ -61,7 +61,8 @@ function _shareBaseUrl() {
 }
 
 async function shareProject(projectId) {
-  if (!(typeof MCPS_ORG_ID !== 'undefined' && MCPS_ORG_ID) || !(window.firebase && firebase.apps && firebase.apps.length)) {
+  const ctx = (typeof _mcpsAuthContext === 'function') ? _mcpsAuthContext() : { orgId: null, uid: null };
+  if (!ctx.orgId || !(window.firebase && firebase.apps && firebase.apps.length)) {
     showToast('⚠️', 'Le partage nécessite un espace connecté au cloud (pas le mode local)', 'var(--amber)');
     return;
   }
@@ -73,12 +74,12 @@ async function shareProject(projectId) {
   const shareId = _shareRandomId();
   try {
     const db = firebase.firestore();
-    await db.collection('orgs').doc(MCPS_ORG_ID).collection('shared_reports').doc(shareId).set({
+    await db.collection('orgs').doc(ctx.orgId).collection('shared_reports').doc(shareId).set({
       type: 'project',
       sourceId: project.id,
       snapshot,
       active: true,
-      createdBy: firebase.auth().currentUser ? firebase.auth().currentUser.uid : null,
+      createdBy: ctx.uid,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
@@ -88,7 +89,7 @@ async function shareProject(projectId) {
     return;
   }
 
-  const url = `${_shareBaseUrl()}?share=${encodeURIComponent(MCPS_ORG_ID)}:${shareId}`;
+  const url = `${_shareBaseUrl()}?share=${encodeURIComponent(ctx.orgId)}:${shareId}`;
   _showShareLinkModal(url);
   if (typeof _mcpsAudit === 'function') _mcpsAudit('CREATE', 'shared_report', shareId, { projectId: project.id });
 }
@@ -119,6 +120,71 @@ function _showShareLinkModal(url) {
     catch (e) { showToast('⚠️', 'Copie impossible — sélectionnez et copiez manuellement', 'var(--amber)'); }
   };
 }
+
+// ═══════════════════════════════════════════════════════
+//  Gestion des liens partagés — jusqu'ici la révocation n'existait qu'au
+//  niveau des règles Firestore (active:false), sans aucun moyen de le faire
+//  depuis l'interface. Panneau "Mes liens partagés" : liste + révocation.
+// ═══════════════════════════════════════════════════════
+async function listActiveShares() {
+  const ctx = (typeof _mcpsAuthContext === 'function') ? _mcpsAuthContext() : { orgId: null };
+  if (!ctx.orgId || !(window.firebase && firebase.apps && firebase.apps.length)) return [];
+  const snap = await firebase.firestore().collection('orgs').doc(ctx.orgId)
+    .collection('shared_reports').where('active', '==', true).get();
+  const out = [];
+  snap.forEach(doc => out.push({ id: doc.id, ...doc.data() }));
+  return out;
+}
+window.listActiveShares = listActiveShares;
+
+async function revokeShare(shareId) {
+  if (!confirm("Révoquer ce lien ? Le client qui l'a reçu perdra immédiatement l'accès.")) return;
+  const ctx = (typeof _mcpsAuthContext === 'function') ? _mcpsAuthContext() : { orgId: null };
+  try {
+    await firebase.firestore().collection('orgs').doc(ctx.orgId).collection('shared_reports').doc(shareId)
+      .update({ active: false, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    showToast('🔒', 'Lien révoqué', 'var(--amber)');
+    if (typeof _mcpsAudit === 'function') _mcpsAudit('UPDATE', 'shared_report', shareId, { active: false });
+    showSharedReportsPanel();
+  } catch (e) {
+    console.error('revokeShare', e);
+    showToast('⚠️', 'Échec de la révocation', 'var(--red)');
+  }
+}
+window.revokeShare = revokeShare;
+
+async function showSharedReportsPanel() {
+  let box = document.getElementById('shared-reports-panel');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'shared-reports-panel';
+    box.className = 'overlay';
+    box.style.cssText = 'display:flex;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999';
+    box.addEventListener('click', (e) => { if (e.target === box) box.remove(); });
+    document.body.appendChild(box);
+  }
+  box.innerHTML = `<div class="card" style="max-width:560px;width:92%;max-height:80vh;overflow:auto;padding:22px 24px">
+    <div style="font-weight:700;font-size:15px;margin-bottom:14px">🔗 Mes liens partagés</div>
+    <div id="shared-reports-list" style="font-size:12.5px;color:var(--text-muted)">Chargement…</div>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn btn-ghost btn-sm" onclick="document.getElementById('shared-reports-panel').remove()">Fermer</button></div>
+  </div>`;
+  const list = box.querySelector('#shared-reports-list');
+  try {
+    const shares = await listActiveShares();
+    list.innerHTML = shares.length ? shares.map(s => `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="color:var(--text);font-weight:600">${_esc(s.snapshot?.projectName || '(projet supprimé)')}</div>
+          <div style="font-size:11px">${_esc(s.snapshot?.clientName || '')}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="revokeShare('${s.id}')">Révoquer</button>
+      </div>`).join('') : `<div style="padding:12px 0">Aucun lien actif pour le moment.</div>`;
+  } catch (e) {
+    console.error('showSharedReportsPanel', e);
+    list.innerHTML = 'Impossible de charger les liens partagés.';
+  }
+}
+window.showSharedReportsPanel = showSharedReportsPanel;
 
 // ═══════════════════════════════════════════════════════
 //  Vue publique — consultation du rapport partagé, sans authentification

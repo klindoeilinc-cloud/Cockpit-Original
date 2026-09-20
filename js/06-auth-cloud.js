@@ -1,5 +1,16 @@
 (function(){
   let MCPS_ORG_ID = null, MCPS_ROLE = null, MCPS_UID = null, MCPS_EMAIL = null;
+  // CORRECTIF : MCPS_ORG_ID/UID/EMAIL sont des `let` privés à cette IIFE —
+  // invisibles depuis un autre fichier <script>, contrairement à un `const`
+  // de premier niveau (voir MCPS_CHANNELS dans js/01-app-core.js, accessible
+  // tel quel). js/09-shared-reports.js référençait MCPS_ORG_ID directement :
+  // `typeof MCPS_ORG_ID` renvoyait toujours "undefined" depuis ce fichier
+  // (typeof ne lève pas d'erreur sur un identifiant non déclaré), donc le
+  // partage de rapport se désactivait silencieusement même connecté au
+  // cloud. Cette fonction expose l'état courant sans exposer les variables
+  // elles-mêmes ni permettre de les modifier de l'extérieur.
+  function _mcpsAuthContext(){ return { orgId: MCPS_ORG_ID, uid: MCPS_UID, email: MCPS_EMAIL, role: MCPS_ROLE }; }
+  window._mcpsAuthContext = _mcpsAuthContext;
 
   function _fsEnabled(){ return !!(MCPS_CONFIG.firebase && MCPS_CONFIG.firebase.apiKey && MCPS_CONFIG.firebase.projectId); }
 

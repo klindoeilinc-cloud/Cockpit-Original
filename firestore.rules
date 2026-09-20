@@ -125,11 +125,14 @@ service cloud.firestore {
       //      uniquement un instantané pré-filtré construit côté client par
       //      buildProjectShareSnapshot() (voir js/09-shared-reports.js), qui
       //      exclut explicitement budgets, heures, marge, et tout autre client.
-      //   2. `allow list: if false` empêche toute énumération : un shareId
-      //      ne peut être obtenu que par celui à qui l'agence l'a envoyé.
+      //   2. Seul un membre authentifié de l'organisation peut lister la
+      //      collection (panneau "Mes liens partagés") — un accès qu'il a de
+      //      toute façon déjà sur les données réelles, bien plus sensibles,
+      //      via `data/{docId}`. Un client externe non authentifié ne peut
+      //      jamais énumérer : `get` par shareId connu est son seul chemin.
       match /shared_reports/{shareId} {
         allow get: if resource.data.active == true;
-        allow list: if false;
+        allow list: if isSignedIn() && myOrgId() == orgId;
         allow create: if isSignedIn() && myOrgId() == orgId && myRole() != 'readonly'
           && request.resource.data.createdBy == request.auth.uid
           && request.resource.data.active == true;
