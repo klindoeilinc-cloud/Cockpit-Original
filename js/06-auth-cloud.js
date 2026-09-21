@@ -566,11 +566,6 @@ Karim Diallo - Développeur Web"></textarea>
       if (fileInput.files && fileInput.files[0]) logoUrl = await _mcpsProcessLogo(fileInput.files[0]);
     } catch(e) { console.error('MCPS logo error:', e); showToast('⚠️', (e && e.message) || 'Logo non importé','var(--amber)'); }
 
-    const db = firebase.firestore();
-    await db.collection('orgs').doc(MCPS_ORG_ID).update({
-      name, branding: { appName: name, primaryColor: color, logoUrl },
-    });
-
     if (teamRaw) {
       const lines = teamRaw.split('\n').map(l=>l.trim()).filter(Boolean);
       const newMembers = lines.map((l,i)=>{
@@ -579,10 +574,28 @@ Karim Diallo - Développeur Web"></textarea>
       });
       DB.team = [...DB.team, ...newMembers];
     }
+
+    const branding = { appName: name, primaryColor: color, logoUrl };
     closeModal();
-    _applyBranding({ ...MCPS_ORG, name, branding: { appName: name, primaryColor: color, logoUrl } });
+    // CORRECTIF : appliquée localement AVANT l'écriture cloud, qui suit
+    // maintenant dans son propre try/catch. Avant ce correctif, l'écriture
+    // Firestore (aucun try/catch) était la toute première étape après le
+    // traitement du logo — la moindre erreur ou lenteur réseau à cet instant
+    // faisait échouer silencieusement (rejet de promesse non intercepté)
+    // TOUTE la suite : la modale ne se fermait pas proprement, la photo ne
+    // s'affichait jamais, et rien n'était sauvegardé, même localement. Même
+    // principe que _mcpsSetLogo() juste plus bas dans ce fichier, qui gérait
+    // déjà ça correctement — cette fonction et _saveBranding() ne suivaient
+    // pas ce même modèle de résilience.
+    _applyBranding({ ...MCPS_ORG, name, branding });
     saveDB();
-    showToast('✅','Votre espace est configuré !','var(--green)');
+    try {
+      await firebase.firestore().collection('orgs').doc(MCPS_ORG_ID).update({ name, branding });
+      showToast('✅','Votre espace est configuré !','var(--green)');
+    } catch (e) {
+      console.error('MCPS onboarding save error:', e);
+      showToast('⚠️','Espace configuré localement — la synchronisation cloud a échoué, réessayez plus tard','var(--amber)');
+    }
   }
   window._onboardingFinish = _onboardingFinish;
 
@@ -613,10 +626,19 @@ Karim Diallo - Développeur Web"></textarea>
       if (fileInput.files && fileInput.files[0]) logoUrl = await _mcpsProcessLogo(fileInput.files[0]);
     } catch(e) { console.error('MCPS logo error:', e); showToast('⚠️', (e && e.message) || 'Logo non importé','var(--amber)'); }
     const branding = { appName: name, primaryColor: color, logoUrl };
-    await firebase.firestore().collection('orgs').doc(MCPS_ORG_ID).update({ name, branding });
-    _applyBranding({ ...MCPS_ORG, name, branding });
+    // CORRECTIF : même défaut que _onboardingFinish() — l'écriture Firestore
+    // était avant l'application locale et sans try/catch, donc une erreur ou
+    // une lenteur réseau à cet instant empêchait la marque/le logo de
+    // s'afficher ET de se fermer proprement, silencieusement.
     closeModal();
-    showToast('✅','Marque mise à jour','var(--green)');
+    _applyBranding({ ...MCPS_ORG, name, branding });
+    try {
+      await firebase.firestore().collection('orgs').doc(MCPS_ORG_ID).update({ name, branding });
+      showToast('✅','Marque mise à jour','var(--green)');
+    } catch (e) {
+      console.error('MCPS branding save error:', e);
+      showToast('⚠️','Appliqué localement — la synchronisation cloud a échoué, réessayez plus tard','var(--amber)');
+    }
   }
   window._saveBranding = _saveBranding;
 

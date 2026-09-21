@@ -174,6 +174,33 @@ function _mkSharedReportsCollection(){
   return col;
 }
 function _mkDataDocRef(){ return { get: async()=>({exists:true,data:()=>_doc}), set: async(v)=>{ _doc=v; window._setCallCount++; } }; }
+// Mock réaliste de orgs/{orgId} : contrairement à une précédente version qui
+// renvoyait toujours {} au get() et ignorait tout set()/update(), celui-ci
+// persiste réellement, y compris les clés en notation pointée ('branding.logoUrl')
+// que Firestore fusionne en profondeur — sans quoi un test sur _onboardingFinish()/
+// _saveBranding()/_mcpsSetLogo() ne peut rien prouver sur ce qui est vraiment écrit.
+window._orgDoc = { name: 'Org Test', branding: { appName: 'Org Test', primaryColor: '#00c8ff', logoUrl: '' }, plan: 'trial' };
+window._orgUpdateShouldFail = false;
+function _mkOrgDocRef(){
+  return {
+    get: async () => ({ exists: true, data: () => window._orgDoc }),
+    set: async (v) => { window._orgDoc = v; },
+    update: async (patch) => {
+      if (window._orgUpdateShouldFail) throw new Error('simulated-firestore-error');
+      for (const [key, val] of Object.entries(patch)) {
+        if (key.includes('.')) {
+          const parts = key.split('.');
+          let obj = window._orgDoc;
+          for (let i = 0; i < parts.length - 1; i++) { obj[parts[i]] = obj[parts[i]] || {}; obj = obj[parts[i]]; }
+          obj[parts[parts.length - 1]] = val;
+        } else {
+          window._orgDoc[key] = val;
+        }
+      }
+    },
+    collection(s){ if(s==='data') return { doc(){ return _mkDataDocRef(); } }; if(s==='audit_logs') return _mkAuditLogsCollection(); if(s==='shared_reports') return _mkSharedReportsCollection(); return _mkQ(s); },
+  };
+}
 function _mkQ(path){
   return {
     get: async()=>({exists: path==='data', data:()=>_doc}),
@@ -181,10 +208,7 @@ function _mkQ(path){
     delete: async()=>{},
     doc(id){
       if (path==='users') return { get: async()=>({exists:true,data:()=>({orgId:'o1',role:'${role}',email:'a@t.com'})}) };
-      if (path==='orgs') return {
-        collection(s){ if(s==='data') return { doc(){ return _mkDataDocRef(); } }; if(s==='audit_logs') return _mkAuditLogsCollection(); if(s==='shared_reports') return _mkSharedReportsCollection(); return _mkQ(s); },
-        get: async()=>({exists:true,data:()=>({})}), set: async()=>{},
-      };
+      if (path==='orgs') return _mkOrgDocRef();
       return _mkQ(path+'/'+id);
     },
     collection(s){return _mkQ(s);}, where(){return this;},
@@ -523,6 +547,59 @@ async function e2eTests() {
       const before = pop.hidden;
       win._mcpsLogoMenuToggle();
       assertEqual(pop.hidden, before, "le menu doit rester fermé pour un non-admin");
+    });
+  }
+
+  suite("E2E — Onboarding & marque blanche : résilience à une erreur cloud", () => {});
+  {
+    // BUG SIGNALÉ : "lorsqu'on ajoute une photo, elle ne prend pas effet
+    // lorsqu'on arrive sur l'interface après s'être enregistré". Cause
+    // trouvée : _onboardingFinish() et _saveBranding() écrivaient d'abord
+    // dans Firestore SANS try/catch, avant d'appliquer quoi que ce soit
+    // localement — la moindre erreur ou lenteur réseau à cet instant précis
+    // faisait échouer silencieusement (rejet de promesse non intercepté)
+    // toute la suite : la modale ne se fermait pas, la photo ne s'affichait
+    // jamais. _mcpsSetLogo(), juste à côté dans le même fichier, gérait déjà
+    // ça correctement (local d'abord, erreur cloud non bloquante) — ces deux
+    // fonctions ne suivaient pas ce même modèle de résilience.
+    const { win, doc } = await loadApp({ role: "admin" });
+    await wait(2000);
+    unlock(win, doc);
+    win.eval(`window._orgUpdateShouldFail = true;`); // simule une écriture Firestore qui échoue
+
+    win.eval(`_showOnboardingWizard();`);
+    win.eval(`
+      document.getElementById('ob-name').value = 'Mon Agence Test';
+      document.getElementById('ob-color').value = '#ff0000';
+    `);
+    await win.eval(`_onboardingFinish()`);
+    await test("_onboardingFinish() ferme la modale même si l'écriture cloud échoue", () => {
+      assert(!doc.getElementById('main-overlay').classList.contains('open'), "la modale doit se fermer malgré l'échec réseau");
+    });
+    await test("_onboardingFinish() applique le nom/la marque localement même si l'écriture cloud échoue", () => {
+      const title = doc.querySelector('.sb-title');
+      assertEqual(title.textContent, 'Mon Agence Test', "le nom doit s'afficher immédiatement, sans dépendre du succès de la synchronisation cloud");
+    });
+
+    win.eval(`window._orgUpdateShouldFail = false;`);
+    win.eval(`_showOnboardingWizard();`);
+    win.eval(`document.getElementById('ob-name').value = 'Agence Synchronisée';`);
+    await win.eval(`_onboardingFinish()`);
+    await test("_onboardingFinish() persiste bien dans Firestore quand l'écriture réussit", () => {
+      win.eval(`window.__org = _orgDoc;`);
+      assertEqual(win.__org.name, 'Agence Synchronisée');
+    });
+
+    // Même correctif, même vérification, pour le panneau "Marque blanche"
+    // utilisé après l'onboarding (pas seulement à la création de l'espace).
+    win.eval(`window._orgUpdateShouldFail = true;`);
+    win.eval(`openBrandingPanel();`);
+    win.eval(`document.getElementById('brd-name').value = 'Marque Résiliente';`);
+    await win.eval(`_saveBranding()`);
+    await test("_saveBranding() applique la marque localement même si l'écriture cloud échoue", () => {
+      const title = doc.querySelector('.sb-title');
+      assertEqual(title.textContent, 'Marque Résiliente');
+      assert(!doc.getElementById('main-overlay').classList.contains('open'));
     });
   }
 
