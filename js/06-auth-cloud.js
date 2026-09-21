@@ -800,6 +800,7 @@ Karim Diallo - Développeur Web"></textarea>
       <div style="padding:14px 16px;background:var(--surface2);border-radius:10px;margin-bottom:16px">
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Plan actuel</div>
         <div style="font-size:18px;font-weight:800">${plan==='pro'?'Pro':plan==='trial'?`Essai gratuit — ${daysLeft} jour(s) restant(s)`:'Gratuit'}</div>
+        ${plan==='trial' ? `<div style="font-size:11.5px;color:var(--text-muted);margin-top:4px">Pendant l'essai : accès complet, comme le plan Pro. Ensuite, passez au plan Gratuit (3 clients) ou au plan Pro — l'essai ne bloque rien automatiquement, mais rien ne vous a jusqu'ici permis de choisir explicitement.</div>` : ''}
       </div>
       <div class="fg" style="font-size:12.5px;color:var(--text-muted);line-height:1.6">
         <strong>Gratuit</strong> — jusqu'à 3 clients<br>
@@ -807,11 +808,43 @@ Karim Diallo - Développeur Web"></textarea>
       </div>
       ${MCPS_ROLE!=='admin' ? '<div style="font-size:12px;color:var(--text-muted)">Seul un administrateur peut gérer l\'abonnement.</div>' :
         plan==='pro' ? `<div class="modal-acts"><button class="btn btn-primary" onclick="_openBillingPortal()">Gérer mon abonnement</button></div>` :
-        `<div class="modal-acts"><button class="btn btn-primary" onclick="_startCheckout()">Passer au plan Pro</button></div>`}
+        plan==='free' ? `<div class="modal-acts"><button class="btn btn-primary" onclick="_startCheckout()">Passer au plan Pro</button></div>` :
+        `<div class="modal-acts" style="justify-content:space-between">
+           <button class="btn btn-ghost" onclick="_switchToFreePlan()">Utiliser le plan Gratuit</button>
+           <button class="btn btn-primary" onclick="_startCheckout()">Passer au plan Pro</button>
+         </div>`}
     `;
     document.getElementById('main-overlay').classList.add('open');
   }
   window.openBillingPanel = openBillingPanel;
+
+  // CORRECTIF : jusqu'ici, une organisation en essai ('trial') n'avait
+  // AUCUN moyen explicite de passer au plan Gratuit — seul "Passer au plan
+  // Pro" était proposé. Sans projet Stripe déployé (le cas de tout nouveau
+  // déploiement, voir README), ce bouton échoue toujours ; l'utilisateur
+  // n'avait alors plus aucune action possible sur cet écran pour continuer
+  // à utiliser l'application gratuitement — d'où "je n'arrive pas à
+  // utiliser la version gratuite". Le plan 'trial' reste techniquement
+  // aussi permissif que 'pro' (voir _checkPlanLimit) : rien ne bloquait
+  // réellement l'usage, mais rien ne le rendait visible ni choisissable
+  // non plus.
+  async function _switchToFreePlan(){
+    if (MCPS_ROLE !== 'admin') { showToast('⚠️','Réservé aux administrateurs','var(--amber)'); return; }
+    closeModal();
+    _applyBranding({ ...MCPS_ORG, plan: 'free' });
+    if (!MCPS_ORG_ID || !(window.firebase && firebase.apps && firebase.apps.length)) {
+      showToast('✅','Plan Gratuit activé','var(--green)');
+      return;
+    }
+    try {
+      await firebase.firestore().collection('orgs').doc(MCPS_ORG_ID).update({ plan: 'free' });
+      showToast('✅','Plan Gratuit activé','var(--green)');
+    } catch (e) {
+      console.error('MCPS plan switch error:', e);
+      showToast('⚠️','Activé localement — la synchronisation cloud a échoué, réessayez plus tard','var(--amber)');
+    }
+  }
+  window._switchToFreePlan = _switchToFreePlan;
 
   function _startCheckout(){
     if (!_fsEnabled()) { showToast('⚠️','Firebase non configuré','var(--amber)'); return; }

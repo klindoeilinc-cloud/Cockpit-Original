@@ -603,6 +603,54 @@ async function e2eTests() {
     });
   }
 
+  suite("E2E — Facturation : passer du plan Essai au plan Gratuit", () => {});
+  {
+    // BUG SIGNALÉ : "j'arrive pas à utiliser la version gratuite". Cause :
+    // une organisation en essai ('trial') n'avait aucun moyen explicite de
+    // passer au plan Gratuit — seul "Passer au plan Pro" était proposé, et
+    // ce bouton échoue systématiquement sans projet Stripe déployé (le cas
+    // de tout nouveau déploiement). L'utilisateur se retrouvait bloqué sur
+    // cet écran sans action possible pour continuer gratuitement.
+    const { win, doc } = await loadApp({ role: "admin" });
+    await wait(2000);
+    unlock(win, doc);
+    win.eval(`_orgDoc.plan = 'trial'; _orgDoc.trialEndsAt = Date.now() + 5*86400000;`);
+    win.eval(`openBillingPanel();`);
+    await test("le plan Essai propose bien un bouton pour passer au plan Gratuit", () => {
+      const btns = [...doc.querySelectorAll('.modal-acts button')].map(b => b.textContent);
+      assert(btns.some(t => /Utiliser le plan Gratuit/.test(t)), "le bouton 'Utiliser le plan Gratuit' doit être proposé pendant l'essai, pas seulement 'Passer au plan Pro'");
+    });
+    await win.eval(`_switchToFreePlan()`);
+    await test("_switchToFreePlan() ferme la modale et bascule le badge sur Gratuit", () => {
+      assert(!doc.getElementById('main-overlay').classList.contains('open'));
+      assertEqual(doc.getElementById('plan-badge').textContent, 'Gratuit');
+    });
+    await test("_switchToFreePlan() persiste bien le changement dans Firestore", () => {
+      win.eval(`window.__plan = _orgDoc.plan;`);
+      assertEqual(win.__plan, 'free');
+    });
+    win.eval(`openBillingPanel();`);
+    await test("une fois au plan Gratuit, le bouton 'Utiliser le plan Gratuit' ne réapparaît plus (déjà dessus)", () => {
+      const btns = [...doc.querySelectorAll('.modal-acts button')].map(b => b.textContent);
+      assert(!btns.some(t => /Utiliser le plan Gratuit/.test(t)));
+      assert(btns.some(t => /Passer au plan Pro/.test(t)));
+    });
+  }
+  {
+    // Résilience réseau, même principe que l'onboarding et la marque blanche.
+    const { win, doc } = await loadApp({ role: "admin" });
+    await wait(2000);
+    unlock(win, doc);
+    win.eval(`_orgDoc.plan = 'trial'; window._orgUpdateShouldFail = true;`);
+    win.eval(`openBillingPanel();`);
+    await win.eval(`_switchToFreePlan()`);
+    await test("_switchToFreePlan() applique le plan Gratuit localement même si l'écriture cloud échoue", () => {
+      assertEqual(doc.getElementById('plan-badge').textContent, 'Gratuit');
+      assert(!doc.getElementById('main-overlay').classList.contains('open'));
+    });
+    win.eval(`window._orgUpdateShouldFail = false;`);
+  }
+
   suite("E2E — Onboarding : guide d'espace vide", () => {});
   {
     const { win, doc } = await loadApp({ role: "admin" });
