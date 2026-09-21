@@ -458,6 +458,28 @@ async function integrationTests() {
     await test("sauvegardes successives de la même session n'entrent pas en conflit", () =>
       waitFor(() => win._setCallCount > beforeCalls, { label: "seconde écriture cloud" }));
   }
+  {
+    // BUG SIGNALÉ : une action ajoutée à la To-Do List "ne passe pas" —
+    // disparaît après un rechargement. Cause : saveTodos() écrivait
+    // uniquement dans localStorage, sans jamais appeler saveDB() ni ses
+    // hooks post-sauvegarde — donc jamais de synchronisation cloud
+    // (cloudSaveFullDB). Connecté à un compte, _loadOrgData() relit _todos
+    // depuis Firestore à chaque session : comme Firestore n'avait jamais
+    // reçu la mise à jour, la todo ajoutée était silencieusement écrasée.
+    const { win, doc } = await loadApp({ role: "admin" });
+    await wait(2000);
+    unlock(win, doc);
+    win.eval(`go('todo');`);
+    const beforeCalls = win._setCallCount;
+    win.eval(`document.getElementById('todo-in').value = 'Todo qui doit survivre au reload'; addTodo();`);
+    await test("ajouter une action déclenche bien une écriture cloud (pas seulement localStorage)", () =>
+      waitFor(() => win._setCallCount > beforeCalls, { label: "synchronisation cloud de la todo" }));
+    await test("la todo ajoutée est bien celle qui atteint Firestore, pas un champ non lié", () => {
+      win.eval(`window.__syncedTodos = _doc._todos;`);
+      assert(win.__syncedTodos.some(t => t.text === 'Todo qui doit survivre au reload'),
+        "_todos doit contenir la nouvelle action dans le document synchronisé, sinon un futur rechargement l'écrasera");
+    });
+  }
 
   suite("Intégration — file d'attente hors-ligne", () => {});
   {

@@ -400,13 +400,16 @@ window.MCPS_VALIDATE = {
   },
 };
 
-function saveDB() {
-  window._mcpsPreSaveHooks.forEach(fn => { try { fn(); } catch(e) { console.error('MCPS pre-save hook error:', e); } });
-
-  localStorage.setItem('cockpit-db', JSON.stringify(DB));
-  markUnsaved();
-  _updateCounters(); // keep all counters in sync after every save
-  // Auto-save debounce
+// Partagé entre saveDB() et saveTodos() : arme l'auto-sauvegarde dans le
+// fichier local (si un _fileHandle est actif) et déclenche les hooks
+// post-sauvegarde — notamment cloudSaveFullDB (voir js/06-auth-cloud.js),
+// seul chemin qui synchronise réellement vers Firestore. CORRECTIF :
+// saveTodos() n'appelait jusqu'ici ni ce timer ni ces hooks (voir plus bas) —
+// une action ajoutée à la To-Do List ne survivait que dans le localStorage
+// de CE navigateur. Connectée à un compte cloud, le prochain chargement de
+// session (_loadOrgData, qui lit _todos depuis Firestore) l'écrasait
+// silencieusement, puisque Firestore n'avait jamais reçu la mise à jour.
+function _mcpsArmAutoSaveAndPostHooks() {
   clearTimeout(window._autoSaveTimer);
   window._autoSaveTimer = setTimeout(() => {
     if (!_hasUnsaved) return;
@@ -424,8 +427,16 @@ function saveDB() {
       if (btn) btn.classList.remove('unsaved');
     }
   }, 2000);
-
   window._mcpsPostSaveHooks.forEach(fn => { try { fn(); } catch(e) { console.error('MCPS post-save hook error:', e); } });
+}
+
+function saveDB() {
+  window._mcpsPreSaveHooks.forEach(fn => { try { fn(); } catch(e) { console.error('MCPS pre-save hook error:', e); } });
+
+  localStorage.setItem('cockpit-db', JSON.stringify(DB));
+  markUnsaved();
+  _updateCounters(); // keep all counters in sync after every save
+  _mcpsArmAutoSaveAndPostHooks();
 }
 
 function markUnsaved() {
@@ -1714,6 +1725,7 @@ function saveTodos() {
   localStorage.setItem('cockpit-todos',JSON.stringify(state.todos));
   localStorage.setItem('cockpit-todo-id',state.nextTodoId);
   markUnsaved();
+  _mcpsArmAutoSaveAndPostHooks();
 }
 function tdDragStart(e){state.drag=e.currentTarget;e.currentTarget.classList.add('dragging');}
 function tdDragOver(e){e.preventDefault();e.currentTarget.classList.add('drag-over');}
